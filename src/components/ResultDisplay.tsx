@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { BreakdownItem, PriceScheduleItem } from '../hooks/useCalculator';
 
 interface ResultDisplayProps {
@@ -6,61 +6,81 @@ interface ResultDisplayProps {
     breakdown: BreakdownItem[];
     schedule: PriceScheduleItem[];
     taxRate: number;
-    currentTime: string; // V4: Display Current Time
+    currentTime: string;
+    isOutOfHours: boolean;
 }
 
-export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, schedule, currentTime }) => {
+export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, schedule, currentTime, isOutOfHours }) => {
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+    const toggleExpand = (index: number) => {
+        setExpandedIndex(expandedIndex === index ? null : index);
+    };
+
     return (
-        <div style={{
-            background: '#000',
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            marginTop: '20px',
-            border: '1px solid var(--accent-color)'
-        }}>
+        <div className="bg-black rounded-xl p-5 mt-5 border border-[var(--accent-color)]">
+            {/* 合計表示 */}
             <div className="text-center mb-4">
-                {/* Current Time Display */}
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>
-                    現在時刻: {currentTime}
+                <div className="text-lg font-bold text-white mb-2">
+                    {isOutOfHours ? '１時間分の料金' : `現在時刻: ${currentTime}`}
                 </div>
-                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>現在のお会計 (税込)</div>
-                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>
+                <div className="text-sm text-gray-400">現在のお会計 (税込)</div>
+                <div className="text-4xl font-bold text-[var(--accent-color)] mt-1">
                     ¥{currentTotal.toLocaleString()}
                 </div>
             </div>
 
-            {/* Breakdown Table */}
-            <div style={{ borderTop: '1px solid #333', paddingTop: '15px', marginBottom: '20px' }}>
-                <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>詳細内訳</h4>
+            {/* 詳細内訳 */}
+            <div className="border-t border-gray-700 pt-4 mb-5">
+                <h4 className="text-sm text-gray-400 mb-3">詳細内訳</h4>
                 {breakdown.map((item, index) => (
-                    <BreakdownRow
-                        key={index}
-                        label={item.label}
-                        amount={item.amount}
-                        isTotal={item.isTotal}
-                        note={item.note}
-                    />
+                    <BreakdownRow key={index} label={item.label} amount={item.amount} isTotal={item.isTotal} note={item.note} />
                 ))}
             </div>
 
-            {/* Price Schedule Table */}
-            <div style={{ borderTop: '1px solid #333', paddingTop: '15px' }}>
-                <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>料金スケジュール</h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+            {/* 料金スケジュール */}
+            <div className="border-t border-gray-700 pt-4">
+                <h4 className="text-sm text-gray-400 mb-3">料金スケジュール（タップで内訳表示）</h4>
+                <table className="w-full border-collapse text-sm">
                     <thead>
-                        <tr style={{ color: '#aaa', borderBottom: '1px solid #444' }}>
-                            <th style={{ textAlign: 'left', padding: '8px' }}>時間</th>
-                            <th style={{ textAlign: 'right', padding: '8px' }}>合計金額 (税込)</th>
+                        <tr className="text-gray-400 border-b border-gray-600">
+                            <th className="text-left p-2">時間</th>
+                            <th className="text-right p-2">合計金額 (税込)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {schedule.map((item, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #222' }}>
-                                <td style={{ padding: '8px', color: '#fff' }}>〜{item.timeLimit}</td>
-                                <td style={{ padding: '8px', textAlign: 'right', color: 'var(--accent-color)', fontWeight: 'bold' }}>
-                                    ¥{item.totalPrice.toLocaleString()}
-                                </td>
-                            </tr>
+                            <React.Fragment key={index}>
+                                <tr
+                                    onClick={() => toggleExpand(index)}
+                                    className={`cursor-pointer transition-colors ${
+                                        expandedIndex === index
+                                            ? 'bg-[rgba(255,215,0,0.08)]'
+                                            : 'hover:bg-[rgba(255,255,255,0.03)] border-b border-gray-800'
+                                    }`}
+                                >
+                                    <td className="p-2 text-white">
+                                        〜{item.timeLimit}
+                                        <span className="text-[0.7rem] text-gray-500 ml-1.5">
+                                            {expandedIndex === index ? '▲' : '▼'}
+                                        </span>
+                                    </td>
+                                    <td className="p-2 text-right text-[var(--accent-color)] font-bold">
+                                        ¥{item.totalPrice.toLocaleString()}
+                                    </td>
+                                </tr>
+                                {expandedIndex === index && (
+                                    <tr>
+                                        <td colSpan={2} className="px-2 pb-3 pl-4">
+                                            <div className="bg-[rgba(255,255,255,0.03)] rounded-lg p-3 border-b border-gray-800">
+                                                {item.breakdown.map((b, bi) => (
+                                                    <BreakdownRow key={bi} label={b.label} amount={b.amount} isTotal={b.isTotal} note={b.note} />
+                                                ))}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         ))}
                     </tbody>
                 </table>
@@ -70,21 +90,15 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
 };
 
 const BreakdownRow: React.FC<{ label: string; amount: number; isTotal?: boolean; note?: string }> = ({ label, amount, isTotal, note }) => {
-    // Show even if 0 for some items? Or hide? 
-    // Let's hide 0 amount items unless it's Total or specifically important.
-    // But for "Set Fee" it might be 0 if R-Within?
     if (amount === 0 && !isTotal && !label.includes('セット')) return null;
 
     return (
-        <div className="flex justify-between items-center mb-2" style={{
-            color: isTotal ? '#fff' : '#ccc',
-            fontWeight: isTotal ? 'bold' : 'normal',
-            borderTop: isTotal ? '1px solid #444' : 'none',
-            paddingTop: isTotal ? '5px' : '0'
-        }}>
+        <div className={`flex justify-between items-center mb-2 text-[0.85rem] ${
+            isTotal ? 'text-white font-bold border-t border-gray-600 pt-1.5' : 'text-gray-300'
+        }`}>
             <div>
                 {label}
-                {note && <span style={{ fontSize: '0.7rem', color: '#666', marginLeft: '5px' }}>{note}</span>}
+                {note && <span className="text-[0.7rem] text-gray-500 ml-1.5">{note}</span>}
             </div>
             <div>¥{amount.toLocaleString()}</div>
         </div>

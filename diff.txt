@@ -1,0 +1,1280 @@
+﻿diff --git a/src/App.tsx b/src/App.tsx
+index 9c09a6b..bded874 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -49,8 +49,8 @@ function App() {
+     dispatch({ type: 'TOGGLE_SET_HALF_OFF' });
+   };
+ 
+-  const handleAddOrder = (name: string, price: number, isTaxIncluded?: boolean) => {
+-    dispatch({ type: 'ADD_ORDER', payload: { name, price, isTaxIncluded } });
++  const handleAddOrder = (name: string, price: number, isTaxIncluded?: boolean, canHalfOff?: boolean, isHalfOff?: boolean) => {
++    dispatch({ type: 'ADD_ORDER', payload: { name, price, isTaxIncluded, canHalfOff, isHalfOff } });
+   };
+ 
+   const handleUpdateOrderCount = (id: string, delta: number) => {
+@@ -129,7 +129,7 @@ function App() {
+                 background: showDebugPanel ? 'var(--accent-color)' : 'var(--input-bg)',
+                 color: showDebugPanel ? '#000' : 'var(--text-color)',
+                 cursor: 'pointer',
+-                display: 'none', // Hidden
++                display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 fontSize: '1.2rem',
+@@ -150,20 +150,22 @@ function App() {
+         {/* Input Group */}
+         <InputGroup
+           customerType={state.customerType}
++          initialSetPrice={state.initialSetPrice}
+           entryTime={state.entryTime}
+           dohan={state.dohan}
+           isSetHalfOff={state.isSetHalfOff}
+           isGirlsParty={state.isGirlsParty}
+           isAppreciationDay={state.isAppreciationDay}
+-          isFirstLady={state.isFirstLady}
++          isSevenLuck={state.isSevenLuck}
+           additionalNominationCount={state.additionalNominationCount}
+           onCustomerTypeChange={handleCustomerTypeChange}
++          onInitialSetPriceChange={(price) => dispatch({ type: 'SET_INITIAL_SET_PRICE', payload: price })}
+           onEntryTimeChange={handleEntryTimeChange}
+           onDohanToggle={handleDohanToggle}
+           onSetHalfOffToggle={handleSetHalfOffToggle}
+           onGirlsPartyToggle={() => dispatch({ type: 'TOGGLE_GIRLS_PARTY' })}
+           onAppreciationDayToggle={() => dispatch({ type: 'TOGGLE_APPRECIATION_DAY' })}
+-          onFirstLadyToggle={() => dispatch({ type: 'TOGGLE_FIRST_LADY' })}
++          onSevenLuckToggle={() => dispatch({ type: 'TOGGLE_SEVEN_LUCK' })}
+           onAdditionalNominationCountChange={(count) => dispatch({ type: 'SET_ADDITIONAL_NOMINATION_COUNT', payload: count })}
+         />
+ 
+@@ -172,10 +174,12 @@ function App() {
+           orders={state.orders}
+           onAdd={handleAddOrder}
+           onUpdateCount={handleUpdateOrderCount}
++          onSetCount={(id, count) => dispatch({ type: 'SET_ORDER_COUNT', payload: { id, count } })}
++          onToggleHalfOff={(id) => dispatch({ type: 'TOGGLE_ORDER_HALF_OFF', payload: id })}
+           onRemove={handleRemoveOrder}
+           isGirlsParty={state.isGirlsParty}
+           isAppreciationDay={state.isAppreciationDay}
+-          isFirstLady={state.isFirstLady}
++          isSevenLuck={state.isSevenLuck}
+         />
+ 
+         {/* Result Display */}
+diff --git a/src/components/InputGroup.tsx b/src/components/InputGroup.tsx
+index 86c4d30..7279fbf 100644
+--- a/src/components/InputGroup.tsx
++++ b/src/components/InputGroup.tsx
+@@ -1,65 +1,187 @@
+ import type { CustomerType } from '../hooks/useCalculator';
+ 
+-// ... (keep existing components)
++type MainCategory = 'initial' | 'r' | 'regular';
+ 
+ interface InputGroupProps {
+     customerType: CustomerType;
++    initialSetPrice: number;
+     entryTime: string;
+     dohan: boolean;
+     isSetHalfOff: boolean;
+     isGirlsParty: boolean;
+     isAppreciationDay: boolean;
+-    isFirstLady: boolean;
++    isSevenLuck: boolean;
+     additionalNominationCount: number;
+     onCustomerTypeChange: (type: CustomerType) => void;
++    onInitialSetPriceChange: (price: number) => void;
+     onEntryTimeChange: (time: string) => void;
+     onDohanToggle: () => void;
+     onSetHalfOffToggle: () => void;
+     onGirlsPartyToggle: () => void;
+     onAppreciationDayToggle: () => void;
+-    onFirstLadyToggle: () => void;
++    onSevenLuckToggle: () => void;
+     onAdditionalNominationCountChange: (count: number) => void;
+ }
+ 
++// 螟ｧ繧ｫ繝・ざ繝ｪ縺九ｉCustomerType縺ｸ縺ｮ繝槭ャ繝斐Φ繧ｰ
++const getMainCategory = (customerType: CustomerType): MainCategory => {
++    if (customerType === 'initial') return 'initial';
++    if (customerType === 'r_within' || customerType === 'r_after') return 'r';
++    return 'regular';
++};
++
+ export const InputGroup: React.FC<InputGroupProps> = ({
+     customerType,
++    initialSetPrice,
+     entryTime,
+     dohan,
+     isSetHalfOff,
+     isGirlsParty,
+     isAppreciationDay,
+-    isFirstLady,
++    isSevenLuck,
+     additionalNominationCount,
+     onCustomerTypeChange,
++    onInitialSetPriceChange,
+     onEntryTimeChange,
+     onDohanToggle,
+     onSetHalfOffToggle,
+     onGirlsPartyToggle,
+     onAppreciationDayToggle,
+-    onFirstLadyToggle,
++    onSevenLuckToggle,
+     onAdditionalNominationCountChange
+ }) => {
++    const mainCategory = getMainCategory(customerType);
++
++    const handleMainCategoryChange = (cat: MainCategory) => {
++        if (cat === 'initial') onCustomerTypeChange('initial');
++        else if (cat === 'r') onCustomerTypeChange('r_within');
++        else onCustomerTypeChange('regular');
++    };
++
++    const mainCategories: { value: MainCategory; label: string }[] = [
++        { value: 'initial', label: '譁ｰ隕・ },
++        { value: 'r', label: 'R' },
++        { value: 'regular', label: '豁｣隕・ },
++    ];
++
++    const initialPriceOptions = [0, 1000, 3000, 5000];
++
+     return (
+         <div className="card">
+             <h3 className="mb-4">蝓ｺ譛ｬ諠・ｱ</h3>
+-            <SelectGroup
+-                label="繧ｷ繧ｹ繝・Β"
+-                value={customerType}
+-                options={[
+-                    { value: 'initial', label: '譁ｰ隕・ },
+-                    { value: 'r_within', label: 'R (莠碁ｱ髢謎ｻ･蜀・' },
+-                    { value: 'r_after', label: 'R (莠碁ｱ髢謎ｻ･髯・' },
+-                    { value: 'regular', label: '豁｣隕・ },
+-                ]}
+-                onChange={(val) => onCustomerTypeChange(val as CustomerType)}
+-            />
++
++            {/* 繧ｷ繧ｹ繝・Β - 螟ｧ繧ｫ繝・ざ繝ｪ */}
++            <div className="mb-4">
++                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--accent-color)' }}>
++                    繧ｷ繧ｹ繝・Β
++                </label>
++                <div style={{ display: 'flex', gap: '8px' }}>
++                    {mainCategories.map((cat) => (
++                        <button
++                            key={cat.value}
++                            onClick={() => handleMainCategoryChange(cat.value)}
++                            style={{
++                                flex: 1,
++                                padding: '12px',
++                                borderRadius: 'var(--radius-md)',
++                                border: mainCategory === cat.value ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
++                                background: mainCategory === cat.value ? 'var(--accent-color)' : 'var(--input-bg)',
++                                color: mainCategory === cat.value ? '#000' : 'var(--text-color)',
++                                fontWeight: 'bold',
++                                fontSize: '1rem',
++                                cursor: 'pointer',
++                                transition: 'all 0.2s',
++                            }}
++                        >
++                            {cat.label}
++                        </button>
++                    ))}
++                </div>
++            </div>
++
++            {/* 繧ｵ繝夜∈謚・ 譁ｰ隕・竊・繧ｻ繝・ヨ譁咎≡ */}
++            {mainCategory === 'initial' && (
++                <div className="mb-4">
++                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--accent-color)', fontSize: '0.9rem' }}>
++                        繧ｻ繝・ヨ譁咎≡
++                    </label>
++                    <div style={{ display: 'flex', gap: '6px' }}>
++                        {initialPriceOptions.map((price) => (
++                            <button
++                                key={price}
++                                onClick={() => onInitialSetPriceChange(price)}
++                                style={{
++                                    flex: 1,
++                                    padding: '10px 4px',
++                                    borderRadius: 'var(--radius-md)',
++                                    border: initialSetPrice === price ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
++                                    background: initialSetPrice === price ? 'rgba(255,215,0,0.2)' : 'var(--input-bg)',
++                                    color: initialSetPrice === price ? 'var(--accent-color)' : 'var(--text-color)',
++                                    fontWeight: initialSetPrice === price ? 'bold' : 'normal',
++                                    fontSize: '0.9rem',
++                                    cursor: 'pointer',
++                                    transition: 'all 0.2s',
++                                }}
++                            >
++                                ﾂ･{price.toLocaleString()}
++                            </button>
++                        ))}
++                    </div>
++                </div>
++            )}
++
++            {/* 繧ｵ繝夜∈謚・ R 竊・繝√こ繝・ヨ譛峨ｊ/辟｡縺・*/}
++            {mainCategory === 'r' && (
++                <div className="mb-4">
++                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--accent-color)', fontSize: '0.9rem' }}>
++                        繝√こ繝・ヨ
++                    </label>
++                    <div style={{ display: 'flex', gap: '8px' }}>
++                        <button
++                            onClick={() => onCustomerTypeChange('r_within')}
++                            style={{
++                                flex: 1,
++                                padding: '12px',
++                                borderRadius: 'var(--radius-md)',
++                                border: customerType === 'r_within' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
++                                background: customerType === 'r_within' ? 'rgba(255,215,0,0.2)' : 'var(--input-bg)',
++                                color: customerType === 'r_within' ? 'var(--accent-color)' : 'var(--text-color)',
++                                fontWeight: customerType === 'r_within' ? 'bold' : 'normal',
++                                fontSize: '0.95rem',
++                                cursor: 'pointer',
++                                transition: 'all 0.2s',
++                            }}
++                        >
++                            繝√こ繝・ヨ譛峨ｊ
++                        </button>
++                        <button
++                            onClick={() => onCustomerTypeChange('r_after')}
++                            style={{
++                                flex: 1,
++                                padding: '12px',
++                                borderRadius: 'var(--radius-md)',
++                                border: customerType === 'r_after' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
++                                background: customerType === 'r_after' ? 'rgba(255,215,0,0.2)' : 'var(--input-bg)',
++                                color: customerType === 'r_after' ? 'var(--accent-color)' : 'var(--text-color)',
++                                fontWeight: customerType === 'r_after' ? 'bold' : 'normal',
++                                fontSize: '0.95rem',
++                                cursor: 'pointer',
++                                transition: 'all 0.2s',
++                            }}
++                        >
++                            繝√こ繝・ヨ辟｡縺・+                        </button>
++                    </div>
++                </div>
++            )}
++
+             <TimeInput
+                 label="蜈･蠎玲凾髢・
+                 value={entryTime}
+                 onChange={onEntryTimeChange}
+             />
+ 
+-            {/* Option Header */}
++            {/* 繧ｪ繝励す繝ｧ繝ｳ */}
+             <div style={{
+                 marginTop: '16px',
+                 marginBottom: '12px',
+@@ -92,9 +214,9 @@ export const InputGroup: React.FC<InputGroupProps> = ({
+                 onChange={onAppreciationDayToggle}
+             />
+             <Toggle
+-                label="繝輔ぃ繝ｼ繧ｹ繝医Ξ繝・ぅ"
+-                checked={isFirstLady}
+-                onChange={onFirstLadyToggle}
++                label="繧ｻ繝悶Φ繝ｩ繝・け"
++                checked={isSevenLuck}
++                onChange={onSevenLuckToggle}
+             />
+ 
+             <div className="mb-4">
+@@ -144,43 +266,6 @@ export const InputGroup: React.FC<InputGroupProps> = ({
+     );
+ };
+ 
+-interface SelectGroupProps {
+-    label: string;
+-    value: string;
+-    options: { value: string; label: string }[];
+-    onChange: (value: string) => void;
+-}
+-
+-export const SelectGroup: React.FC<SelectGroupProps> = ({ label, value, options, onChange }) => {
+-    return (
+-        <div className="mb-4">
+-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--accent-color)' }}>
+-                {label}
+-            </label>
+-            <select
+-                value={value}
+-                onChange={(e) => onChange(e.target.value)}
+-                style={{
+-                    width: '100%',
+-                    padding: '12px',
+-                    borderRadius: 'var(--radius-md)',
+-                    border: '1px solid var(--border-color)',
+-                    background: 'var(--input-bg)',
+-                    color: 'var(--text-color)',
+-                    fontSize: '1rem',
+-                    outline: 'none',
+-                }}
+-            >
+-                {options.map((opt) => (
+-                    <option key={opt.value} value={opt.value}>
+-                        {opt.label}
+-                    </option>
+-                ))}
+-            </select>
+-        </div>
+-    );
+-};
+-
+ interface TimeInputProps {
+     label: string;
+     value: string;
+diff --git a/src/components/OrderSection.tsx b/src/components/OrderSection.tsx
+index 12ea0f0..0bb2324 100644
+--- a/src/components/OrderSection.tsx
++++ b/src/components/OrderSection.tsx
+@@ -3,30 +3,27 @@ import type { OrderItem } from '../hooks/useCalculator';
+ 
+ interface OrderSectionProps {
+     orders: OrderItem[];
+-    onAdd: (name: string, price: number, isTaxIncluded?: boolean) => void;
++    onAdd: (name: string, price: number, isTaxIncluded?: boolean, canHalfOff?: boolean, isHalfOff?: boolean) => void;
+     onUpdateCount: (id: string, delta: number) => void;
++    onSetCount: (id: string, count: number) => void;
++    onToggleHalfOff: (id: string) => void;
+     onRemove: (id: string) => void;
+     isGirlsParty: boolean;
+     isAppreciationDay: boolean;
+-    isFirstLady: boolean;
++    isSevenLuck: boolean;
+ }
+ 
+-// Define the menu items. 
+-// Note: 'isCustom' flag marks the item that requires manual input.
+-// 'canHalfOff' flag marks items eligible for half-price option (Asti to SPL Gold).
+ const MENU_ITEMS = [
+-    // Top Priority Items
+     { name: '郛ｶ繝｢繝・, price: 1500, canHalfOff: true },
+     { name: '繝壹ャ繝医・繝医Ν蜷・ｨｮ', price: 2000 },
+     { name: '繧ｽ繝輔ヨ繝峨Μ繝ｳ繧ｯ', price: 500 },
+     { name: '繧ｷ繝ｧ繝・ヨ邉ｻ', price: 2000, canHalfOff: true },
++    { name: '1800', price: 3000 },
+     { name: '繧ｳ繧ｫ繝懊Β', price: 3000 },
+     { name: '闌芽脂闃ｱ', price: 15000 },
+ 
+-    // Custom Item
+     { name: '繧ｪ繝ｪ繧ｷ繝｣繝ｳ / 縺昴・莉・, price: 0, isCustom: true },
+ 
+-    // Others
+     { name: '繝上・繝墓搶髴ｲ驟・/ 譫玲ｪ朱・', price: 3500 },
+     { name: '繝上・繝慕┥驟・縲郁葛.鮗ｦ縲・譴・・', price: 4200 },
+     { name: '繝上・繝暮升譛・, price: 5000 },
+@@ -59,168 +56,188 @@ const MENU_ITEMS = [
+     { name: 'SPL繝ｫ繝溘リ繧ｹ繝槭げ繝翫Β', price: 400000 },
+     { name: 'SPL繝励Λ繝√リ', price: 450000 },
+ 
+-    // Special
+-    { name: '繝輔ぃ繝ｼ繧ｹ繝医Ξ繝・ぅ繧ｿ繝ｯ繝ｼ', price: 150000, isTaxIncluded: true },
++    { name: '繧ｻ繝悶Φ繝ｩ繝・け繧ｿ繝ｯ繝ｼ', price: 150000, isTaxIncluded: true },
+ ];
+ 
+ export const OrderSection: React.FC<OrderSectionProps> = ({
+-    orders, onAdd, onUpdateCount, onRemove,
+-    isGirlsParty, isAppreciationDay, isFirstLady
++    orders, onAdd, onUpdateCount, onSetCount, onToggleHalfOff, onRemove,
++    isGirlsParty, isAppreciationDay, isSevenLuck
+ }) => {
+     const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+-
+-    // Custom item state
+     const [customName, setCustomName] = useState('');
+     const [customPrice, setCustomPrice] = useState<string>('');
+-
+-    // Champagne Half-Off state
+     const [isHalfOff, setIsHalfOff] = useState(false);
+ 
+     const selectedItem = MENU_ITEMS[selectedItemIndex];
+     const isCustom = selectedItem.isCustom;
+     const canHalfOff = selectedItem.canHalfOff;
+ 
+-    // Reset inputs when selection changes
+     useEffect(() => {
+         if (!isCustom) {
+             setCustomName('');
+             setCustomPrice('');
+         }
+ 
+-        // Auto-check logic
+         let shouldHalfOff = false;
+-
+-        // 1. Girls' Party OR First Lady: Shot, Canned, SPL Blue-Gold
+-        if (isGirlsParty || isFirstLady) {
++        if (isGirlsParty || isSevenLuck) {
+             if (
+                 selectedItem.name === '郛ｶ繝｢繝・ ||
+                 selectedItem.name === '繧ｷ繝ｧ繝・ヨ邉ｻ' ||
+-                (canHalfOff && selectedItem.price >= 35000 && selectedItem.price <= 150000) // SPL Blue to Gold
++                (canHalfOff && selectedItem.price >= 35000 && selectedItem.price <= 150000)
+             ) {
+                 shouldHalfOff = true;
+             }
+         }
+-
+-        // 2. Appreciation Day: Shot, Canned
+         if (isAppreciationDay) {
+-            if (
+-                selectedItem.name === '郛ｶ繝｢繝・ ||
+-                selectedItem.name === '繧ｷ繝ｧ繝・ヨ邉ｻ'
+-            ) {
++            if (selectedItem.name === '郛ｶ繝｢繝・ || selectedItem.name === '繧ｷ繝ｧ繝・ヨ邉ｻ') {
+                 shouldHalfOff = true;
+             }
+         }
+-
+         setIsHalfOff(shouldHalfOff);
+-    }, [selectedItemIndex, isCustom, isGirlsParty, isAppreciationDay, isFirstLady, canHalfOff, selectedItem.name, selectedItem.price]);
++    }, [selectedItemIndex, isCustom, isGirlsParty, isAppreciationDay, isSevenLuck, canHalfOff, selectedItem.name, selectedItem.price]);
+ 
+     const handleAdd = () => {
+         if (isCustom) {
+-            if (!customName || !customPrice) return; // Validate
++            if (!customName || !customPrice) return;
+             onAdd(customName, Number(customPrice));
+             setCustomName('');
+             setCustomPrice('');
+         } else {
+-            if (isHalfOff && canHalfOff) {
+-                let finalPrice = selectedItem.price / 2;
+-                // Special case for Canned items (郛ｶ繝｢繝・ -> 700 yen
+-                if (selectedItem.name === '郛ｶ繝｢繝・) {
+-                    finalPrice = 700;
+-                }
+-                onAdd(`${selectedItem.name} (蜊企｡・`, finalPrice);
+-            } else {
+-                // @ts-ignore
+-                onAdd(selectedItem.name, selectedItem.price, selectedItem.isTaxIncluded);
+-            }
++            onAdd(selectedItem.name, selectedItem.price, selectedItem.isTaxIncluded, selectedItem.canHalfOff, isHalfOff && canHalfOff);
+         }
+     };
+ 
++    // 繝斐Φ逡吶ａ繧｢繧､繝・Β縺ｮ繝峨Ο繝・・繝繧ｦ繝ｳ縺九ｉ縺ｮ髯､螟厄ｼ域里縺ｫ繝ｪ繧ｹ繝医↓陦ｨ遉ｺ縺輔ｌ縺ｦ縺・ｋ縺溘ａ・・+    const pinnedNames = new Set(orders.filter(o => o.isPinned).map(o => o.baseName));
++
+     return (
+         <div className="card">
+             <h3 className="mb-4">蝠・刀繧ｪ繝ｼ繝繝ｼ</h3>
+ 
++            {/* 繝斐Φ逡吶ａ繧｢繧､繝・Β・育ｼｶ繝｢繝弱√・繝・ヨ繝懊ヨ繝ｫ縲√す繝ｧ繝・ヨ・・*/}
++            <div style={{ marginBottom: '16px' }}>
++                {orders.filter(o => o.isPinned).map((order) => (
++                    <div key={order.id} style={{
++                        display: 'flex',
++                        alignItems: 'center',
++                        justifyContent: 'space-between',
++                        padding: '8px 0',
++                        borderBottom: '1px solid #333'
++                    }}>
++                        <div style={{ flex: 1 }}>
++                            <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{order.name}</div>
++                            <div style={{ fontSize: '0.75rem', color: '#aaa' }}>ﾂ･{order.price.toLocaleString()}</div>
++                        </div>
++                        {/* 蜊企｡阪ヨ繧ｰ繝ｫ */}
++                        {order.canHalfOff && (
++                            <div
++                                onClick={() => onToggleHalfOff(order.id)}
++                                style={{
++                                    cursor: 'pointer',
++                                    padding: '4px 8px',
++                                    borderRadius: 'var(--radius-md)',
++                                    border: order.isHalfOff ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
++                                    background: order.isHalfOff ? 'rgba(255,215,0,0.15)' : 'transparent',
++                                    fontSize: '0.7rem',
++                                    color: order.isHalfOff ? 'var(--accent-color)' : '#888',
++                                    marginRight: '8px',
++                                    whiteSpace: 'nowrap',
++                                }}
++                            >
++                                蜊企｡・+                            </div>
++                        )}
++                        <div style={{ display: 'flex', alignItems: 'center' }}>
++                            <button
++                                onClick={() => onUpdateCount(order.id, -1)}
++                                style={{
++                                    width: '32px', height: '32px', borderRadius: '50%',
++                                    border: '1px solid var(--border-color)', background: 'transparent',
++                                    color: '#fff', fontSize: '1rem', cursor: 'pointer'
++                                }}
++                            >-</button>
++                            <input
++                                type="number"
++                                value={order.count}
++                                onChange={(e) => onSetCount(order.id, Number(e.target.value) || 0)}
++                                style={{
++                                    width: '44px', textAlign: 'center', fontWeight: 'bold',
++                                    background: 'transparent', border: 'none', color: '#fff',
++                                    fontSize: '1rem', outline: 'none',
++                                    MozAppearance: 'textfield',
++                                }}
++                            />
++                            <button
++                                onClick={() => onUpdateCount(order.id, 1)}
++                                style={{
++                                    width: '32px', height: '32px', borderRadius: '50%',
++                                    border: 'none', background: 'var(--accent-color)',
++                                    color: '#000', fontSize: '1rem', cursor: 'pointer'
++                                }}
++                            >+</button>
++                        </div>
++                    </div>
++                ))}
++            </div>
++
++            {/* 繝峨Ο繝・・繝繧ｦ繝ｳ霑ｽ蜉 */}
+             <div className="flex flex-col mb-4 gap-2">
+-                {/* Dropdown */}
+                 <div className="flex">
+                     <select
+                         value={selectedItemIndex}
+                         onChange={(e) => setSelectedItemIndex(Number(e.target.value))}
+                         style={{
+-                            flex: 1,
+-                            padding: '12px',
+-                            borderRadius: 'var(--radius-md)',
+-                            border: '1px solid var(--border-color)',
+-                            background: 'var(--input-bg)',
+-                            color: 'var(--text-color)',
+-                            fontSize: '1rem',
+-                            outline: 'none',
++                            flex: 1, padding: '12px', borderRadius: 'var(--radius-md)',
++                            border: '1px solid var(--border-color)', background: 'var(--input-bg)',
++                            color: 'var(--text-color)', fontSize: '1rem', outline: 'none',
+                         }}
+                     >
+                         {MENU_ITEMS
+                             .filter(item => {
+-                                if (item.name === '繝輔ぃ繝ｼ繧ｹ繝医Ξ繝・ぅ繧ｿ繝ｯ繝ｼ') {
+-                                    return isFirstLady;
+-                                }
++                                if (item.name === '繧ｻ繝悶Φ繝ｩ繝・け繧ｿ繝ｯ繝ｼ') return isSevenLuck;
++                                if (pinnedNames.has(item.name)) return false;
+                                 return true;
+                             })
+-                            .map((item, index) => (
+-                                <option key={index} value={MENU_ITEMS.indexOf(item)}>
++                            .map((item) => (
++                                <option key={item.name} value={MENU_ITEMS.indexOf(item)}>
+                                     {item.name} {item.isCustom ? '(閾ｪ逕ｱ蜈･蜉・' : `(ﾂ･${item.price.toLocaleString()})${item.isTaxIncluded ? '(遞手ｾｼ)' : ''}`}
+                                 </option>
+                             ))}
+                     </select>
+                 </div>
+ 
+-                {/* Champagne Half-Off Checkbox */}
+                 {canHalfOff && (
+                     <div
+                         onClick={() => setIsHalfOff(!isHalfOff)}
+                         style={{
+-                            cursor: 'pointer',
+-                            background: 'var(--input-bg)',
+-                            padding: '12px',
++                            cursor: 'pointer', background: 'var(--input-bg)', padding: '12px',
+                             borderRadius: 'var(--radius-md)',
+                             border: isHalfOff ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
+-                            marginTop: '8px',
+-                            marginBottom: '8px',
+-                            display: 'flex',
+-                            justifyContent: 'space-between',
+-                            alignItems: 'center'
++                            marginTop: '8px', marginBottom: '8px',
++                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                         }}
+                     >
+                         <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--gold-color)' }}>
+                             蜊企｡・(ﾂ･{(selectedItem.name === '郛ｶ繝｢繝・ ? 700 : selectedItem.price / 2).toLocaleString()})
+                         </span>
+                         <div style={{
+-                            width: '24px',
+-                            height: '24px',
+-                            borderRadius: '50%',
++                            width: '24px', height: '24px', borderRadius: '50%',
+                             border: '2px solid var(--accent-color)',
+                             background: isHalfOff ? 'var(--accent-color)' : 'transparent',
+-                            display: 'flex',
+-                            alignItems: 'center',
+-                            justifyContent: 'center'
++                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                         }}>
+                             {isHalfOff && <span style={{ color: '#000', fontWeight: 'bold' }}>笨・/span>}
+                         </div>
+                     </div>
+                 )}
+ 
+-                {/* Standard Add Button (Only show if NOT custom) */}
+                 {!isCustom && (
+                     <button
+                         onClick={handleAdd}
+                         style={{
+-                            width: '100%',
+-                            padding: '12px',
+-                            background: 'var(--accent-color)',
+-                            color: '#000',
+-                            border: 'none',
+-                            borderRadius: 'var(--radius-md)',
+-                            fontWeight: 'bold',
+-                            fontSize: '1rem',
+-                            cursor: 'pointer',
+-                            transition: 'background 0.3s'
++                            width: '100%', padding: '12px', background: 'var(--accent-color)',
++                            color: '#000', border: 'none', borderRadius: 'var(--radius-md)',
++                            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.3s'
+                         }}
+                     >
+                         霑ｽ蜉
+@@ -228,53 +245,72 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
+                 )}
+             </div>
+ 
++            {/* 霑ｽ蜉貂医∩繧ｪ繝ｼ繝繝ｼ・医ヴ繝ｳ逡吶ａ莉･螟厄ｼ・*/}
+             <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: isCustom ? '20px' : '0' }}>
+-                {orders.length === 0 && (
++                {orders.filter(o => !o.isPinned).length === 0 && (
+                     <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+-                        繧ｪ繝ｼ繝繝ｼ縺ｯ縺ゅｊ縺ｾ縺帙ｓ
++                        霑ｽ蜉繧ｪ繝ｼ繝繝ｼ縺ｯ縺ゅｊ縺ｾ縺帙ｓ
+                     </div>
+                 )}
+-                {orders.map((order) => (
++                {orders.filter(o => !o.isPinned).map((order) => (
+                     <div key={order.id} className="flex justify-between items-center mb-3" style={{ padding: '8px 0', borderBottom: '1px solid #333' }}>
+-                        <div>
++                        <div style={{ flex: 1 }}>
+                             <div style={{ fontWeight: 'bold' }}>{order.name}</div>
+                             <div style={{ fontSize: '0.8rem', color: '#aaa' }}>ﾂ･{order.price.toLocaleString()}</div>
+                         </div>
++                        {/* 蜊企｡阪ヨ繧ｰ繝ｫ */}
++                        {order.canHalfOff && (
++                            <div
++                                onClick={() => onToggleHalfOff(order.id)}
++                                style={{
++                                    cursor: 'pointer',
++                                    padding: '4px 8px',
++                                    borderRadius: 'var(--radius-md)',
++                                    border: order.isHalfOff ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
++                                    background: order.isHalfOff ? 'rgba(255,215,0,0.15)' : 'transparent',
++                                    fontSize: '0.7rem',
++                                    color: order.isHalfOff ? 'var(--accent-color)' : '#888',
++                                    marginRight: '8px',
++                                    whiteSpace: 'nowrap',
++                                }}
++                            >
++                                蜊企｡・+                            </div>
++                        )}
+                         <div className="flex items-center">
+                             <button
+                                 onClick={() => onUpdateCount(order.id, -1)}
+                                 style={{
+-                                    width: '32px',
+-                                    height: '32px',
+-                                    borderRadius: '50%',
+-                                    border: '1px solid var(--border-color)',
+-                                    background: 'transparent',
+-                                    color: '#fff',
+-                                    fontSize: '1rem'
++                                    width: '32px', height: '32px', borderRadius: '50%',
++                                    border: '1px solid var(--border-color)', background: 'transparent',
++                                    color: '#fff', fontSize: '1rem'
+                                 }}
+                             >-</button>
+-                            <div style={{ width: '40px', textAlign: 'center', fontWeight: 'bold' }}>{order.count}</div>
++                            <input
++                                type="number"
++                                value={order.count}
++                                onChange={(e) => onSetCount(order.id, Number(e.target.value) || 0)}
++                                style={{
++                                    width: '44px', textAlign: 'center', fontWeight: 'bold',
++                                    background: 'transparent', border: 'none', color: '#fff',
++                                    fontSize: '1rem', outline: 'none',
++                                    MozAppearance: 'textfield',
++                                }}
++                            />
+                             <button
+                                 onClick={() => onUpdateCount(order.id, 1)}
+                                 style={{
+-                                    width: '32px',
+-                                    height: '32px',
+-                                    borderRadius: '50%',
+-                                    border: 'none',
+-                                    background: 'var(--accent-color)',
+-                                    color: '#000',
+-                                    fontSize: '1rem'
++                                    width: '32px', height: '32px', borderRadius: '50%',
++                                    border: 'none', background: 'var(--accent-color)',
++                                    color: '#000', fontSize: '1rem'
+                                 }}
+                             >+</button>
+                             <button
+                                 onClick={() => onRemove(order.id)}
+                                 style={{
+-                                    marginLeft: '10px',
+-                                    background: 'transparent',
+-                                    border: 'none',
+-                                    color: 'var(--danger-color)',
+-                                    fontSize: '0.9rem',
+-                                    textDecoration: 'underline'
++                                    marginLeft: '10px', background: 'transparent', border: 'none',
++                                    color: 'var(--danger-color)', fontSize: '0.9rem', textDecoration: 'underline',
++                                    cursor: 'pointer'
+                                 }}
+                             >
+                                 蜑企勁
+@@ -284,9 +320,9 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
+                 ))}
+             </div>
+ 
+-            {/* Custom Inputs (Only show if Custom is selected) - Placed BELOW the list */}
++            {/* 繧ｫ繧ｹ繧ｿ繝蜈･蜉・*/}
+             {isCustom && (
+-                <div className="flex flex-col gap-2 pt-4 border-t border-gray-700" data-testid="custom-inputs-container">
++                <div className="flex flex-col gap-2 pt-4 border-t border-gray-700">
+                     <div style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '4px' }}>閾ｪ逕ｱ蜈･蜉帙い繧､繝・Β</div>
+                     <input
+                         type="text"
+@@ -294,14 +330,9 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
+                         value={customName}
+                         onChange={(e) => setCustomName(e.target.value)}
+                         style={{
+-                            width: '100%',
+-                            padding: '12px',
+-                            borderRadius: 'var(--radius-md)',
+-                            border: '1px solid var(--border-color)',
+-                            background: 'var(--input-bg)',
+-                            color: 'var(--text-color)',
+-                            fontSize: '1rem',
+-                            outline: 'none',
++                            width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
++                            border: '1px solid var(--border-color)', background: 'var(--input-bg)',
++                            color: 'var(--text-color)', fontSize: '1rem', outline: 'none',
+                         }}
+                     />
+                     <input
+@@ -310,31 +341,21 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
+                         value={customPrice}
+                         onChange={(e) => setCustomPrice(e.target.value)}
+                         style={{
+-                            width: '100%',
+-                            padding: '12px',
+-                            borderRadius: 'var(--radius-md)',
+-                            border: '1px solid var(--border-color)',
+-                            background: 'var(--input-bg)',
+-                            color: 'var(--text-color)',
+-                            fontSize: '1rem',
+-                            outline: 'none',
++                            width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
++                            border: '1px solid var(--border-color)', background: 'var(--input-bg)',
++                            color: 'var(--text-color)', fontSize: '1rem', outline: 'none',
+                         }}
+                     />
+                     <button
+                         onClick={handleAdd}
+                         disabled={!customName || !customPrice}
+                         style={{
+-                            width: '100%',
+-                            padding: '12px',
++                            width: '100%', padding: '12px',
+                             background: (!customName || !customPrice) ? '#444' : 'var(--accent-color)',
+-                            color: '#000',
+-                            border: 'none',
+-                            borderRadius: 'var(--radius-md)',
+-                            fontWeight: 'bold',
+-                            fontSize: '1rem',
++                            color: '#000', border: 'none', borderRadius: 'var(--radius-md)',
++                            fontWeight: 'bold', fontSize: '1rem',
+                             cursor: (!customName || !customPrice) ? 'not-allowed' : 'pointer',
+-                            transition: 'background 0.3s',
+-                            marginTop: '8px'
++                            transition: 'background 0.3s', marginTop: '8px'
+                         }}
+                     >
+                         霑ｽ蜉
+diff --git a/src/components/ResultDisplay.tsx b/src/components/ResultDisplay.tsx
+index da868bb..a63591e 100644
+--- a/src/components/ResultDisplay.tsx
++++ b/src/components/ResultDisplay.tsx
+@@ -1,4 +1,4 @@
+-import React from 'react';
++import React, { useState } from 'react';
+ import type { BreakdownItem, PriceScheduleItem } from '../hooks/useCalculator';
+ 
+ interface ResultDisplayProps {
+@@ -6,10 +6,16 @@ interface ResultDisplayProps {
+     breakdown: BreakdownItem[];
+     schedule: PriceScheduleItem[];
+     taxRate: number;
+-    currentTime: string; // V4: Display Current Time
++    currentTime: string;
+ }
+ 
+ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, schedule, currentTime }) => {
++    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
++
++    const toggleExpand = (index: number) => {
++        setExpandedIndex(expandedIndex === index ? null : index);
++    };
++
+     return (
+         <div style={{
+             background: '#000',
+@@ -19,7 +25,6 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
+             border: '1px solid var(--accent-color)'
+         }}>
+             <div className="text-center mb-4">
+-                {/* Current Time Display */}
+                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>
+                     迴ｾ蝨ｨ譎ょ綾: {currentTime}
+                 </div>
+@@ -29,7 +34,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
+                 </div>
+             </div>
+ 
+-            {/* Breakdown Table */}
++            {/* 隧ｳ邏ｰ蜀・ｨｳ */}
+             <div style={{ borderTop: '1px solid #333', paddingTop: '15px', marginBottom: '20px' }}>
+                 <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>隧ｳ邏ｰ蜀・ｨｳ</h4>
+                 {breakdown.map((item, index) => (
+@@ -43,9 +48,9 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
+                 ))}
+             </div>
+ 
+-            {/* Price Schedule Table */}
++            {/* 譁咎≡繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ */}
+             <div style={{ borderTop: '1px solid #333', paddingTop: '15px' }}>
+-                <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>譁咎≡繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ</h4>
++                <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '10px' }}>譁咎≡繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ・医ち繝・・縺ｧ蜀・ｨｳ陦ｨ遉ｺ・・/h4>
+                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                     <thead>
+                         <tr style={{ color: '#aaa', borderBottom: '1px solid #444' }}>
+@@ -55,12 +60,48 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
+                     </thead>
+                     <tbody>
+                         {schedule.map((item, index) => (
+-                            <tr key={index} style={{ borderBottom: '1px solid #222' }}>
+-                                <td style={{ padding: '8px', color: '#fff' }}>縲悳item.timeLimit}</td>
+-                                <td style={{ padding: '8px', textAlign: 'right', color: 'var(--accent-color)', fontWeight: 'bold' }}>
+-                                    ﾂ･{item.totalPrice.toLocaleString()}
+-                                </td>
+-                            </tr>
++                            <React.Fragment key={index}>
++                                <tr
++                                    onClick={() => toggleExpand(index)}
++                                    style={{
++                                        borderBottom: expandedIndex === index ? 'none' : '1px solid #222',
++                                        cursor: 'pointer',
++                                        background: expandedIndex === index ? 'rgba(255,215,0,0.08)' : 'transparent',
++                                    }}
++                                >
++                                    <td style={{ padding: '8px', color: '#fff' }}>
++                                        縲悳item.timeLimit}
++                                        <span style={{ fontSize: '0.7rem', color: '#666', marginLeft: '6px' }}>
++                                            {expandedIndex === index ? '笆ｲ' : '笆ｼ'}
++                                        </span>
++                                    </td>
++                                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--accent-color)', fontWeight: 'bold' }}>
++                                        ﾂ･{item.totalPrice.toLocaleString()}
++                                    </td>
++                                </tr>
++                                {expandedIndex === index && (
++                                    <tr>
++                                        <td colSpan={2} style={{ padding: '0 8px 12px 16px' }}>
++                                            <div style={{
++                                                background: 'rgba(255,255,255,0.03)',
++                                                borderRadius: 'var(--radius-md)',
++                                                padding: '10px',
++                                                borderBottom: '1px solid #222',
++                                            }}>
++                                                {item.breakdown.map((b, bi) => (
++                                                    <BreakdownRow
++                                                        key={bi}
++                                                        label={b.label}
++                                                        amount={b.amount}
++                                                        isTotal={b.isTotal}
++                                                        note={b.note}
++                                                    />
++                                                ))}
++                                            </div>
++                                        </td>
++                                    </tr>
++                                )}
++                            </React.Fragment>
+                         ))}
+                     </tbody>
+                 </table>
+@@ -70,9 +111,6 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
+ };
+ 
+ const BreakdownRow: React.FC<{ label: string; amount: number; isTotal?: boolean; note?: string }> = ({ label, amount, isTotal, note }) => {
+-    // Show even if 0 for some items? Or hide? 
+-    // Let's hide 0 amount items unless it's Total or specifically important.
+-    // But for "Set Fee" it might be 0 if R-Within?
+     if (amount === 0 && !isTotal && !label.includes('繧ｻ繝・ヨ')) return null;
+ 
+     return (
+@@ -80,7 +118,8 @@ const BreakdownRow: React.FC<{ label: string; amount: number; isTotal?: boolean;
+             color: isTotal ? '#fff' : '#ccc',
+             fontWeight: isTotal ? 'bold' : 'normal',
+             borderTop: isTotal ? '1px solid #444' : 'none',
+-            paddingTop: isTotal ? '5px' : '0'
++            paddingTop: isTotal ? '5px' : '0',
++            fontSize: '0.85rem',
+         }}>
+             <div>
+                 {label}
+diff --git a/src/hooks/useCalculator.ts b/src/hooks/useCalculator.ts
+index ac777eb..8192e1e 100644
+--- a/src/hooks/useCalculator.ts
++++ b/src/hooks/useCalculator.ts
+@@ -5,20 +5,26 @@ export type CustomerType = 'initial' | 'r_within' | 'r_after' | 'regular';
+ export interface OrderItem {
+     id: string;
+     name: string;
++    baseName: string;
+     price: number;
++    originalPrice: number;
+     count: number;
+     isTaxIncluded?: boolean;
++    isPinned?: boolean;
++    canHalfOff?: boolean;
++    isHalfOff?: boolean;
+ }
+ 
+ export interface CalculatorState {
+     customerType: CustomerType;
++    initialSetPrice: number;
+     entryTime: string;
+     currentTime: string;
+     dohan: boolean;
+     isSetHalfOff: boolean;
+     isGirlsParty: boolean;
+     isAppreciationDay: boolean;
+-    isFirstLady: boolean;
++    isSevenLuck: boolean;
+     additionalNominationCount: number;
+     isDebugMode: boolean;
+     orders: OrderItem[];
+@@ -34,6 +40,7 @@ export interface BreakdownItem {
+ export interface PriceScheduleItem {
+     timeLimit: string;
+     totalPrice: number;
++    breakdown: BreakdownItem[];
+ }
+ 
+ export interface CalculationResult {
+@@ -43,18 +50,26 @@ export interface CalculationResult {
+     taxRate: number;
+ }
+ 
++// 繝斐Φ逡吶ａ蛻晄悄繧｢繧､繝・Β
++const PINNED_ORDERS: OrderItem[] = [
++    { id: 'pinned_can', name: '郛ｶ繝｢繝・, baseName: '郛ｶ繝｢繝・, price: 1500, originalPrice: 1500, count: 0, isPinned: true, canHalfOff: true, isHalfOff: false },
++    { id: 'pinned_pet', name: '繝壹ャ繝医・繝医Ν蜷・ｨｮ', baseName: '繝壹ャ繝医・繝医Ν蜷・ｨｮ', price: 2000, originalPrice: 2000, count: 0, isPinned: true },
++    { id: 'pinned_shot', name: '繧ｷ繝ｧ繝・ヨ邉ｻ', baseName: '繧ｷ繝ｧ繝・ヨ邉ｻ', price: 2000, originalPrice: 2000, count: 0, isPinned: true, canHalfOff: true, isHalfOff: false },
++];
++
+ const INITIAL_STATE: CalculatorState = {
+     customerType: 'initial',
++    initialSetPrice: 1000,
+     entryTime: '20:00',
+     currentTime: '20:00',
+     dohan: false,
+     isSetHalfOff: false,
+     isGirlsParty: false,
+     isAppreciationDay: false,
+-    isFirstLady: false,
++    isSevenLuck: false,
+     additionalNominationCount: 0,
+     isDebugMode: false,
+-    orders: [],
++    orders: [...PINNED_ORDERS],
+ };
+ 
+ const PRICES = {
+@@ -67,6 +82,11 @@ const PRICES = {
+ // Closing time: 25:00 (1:00 AM next day)
+ const CLOSING_HOUR = 25;
+ 
++// 蜊企｡崎ｨ育ｮ励・繝ｫ繝代・
++function calcHalfOffPrice(baseName: string, originalPrice: number): number {
++    return baseName === '郛ｶ繝｢繝・ ? 700 : Math.floor(originalPrice / 2);
++}
++
+ type Action =
+     | { type: 'SET_CUSTOMER_TYPE'; payload: CustomerType }
+     | { type: 'SET_ENTRY_TIME'; payload: string }
+@@ -75,11 +95,14 @@ type Action =
+     | { type: 'TOGGLE_SET_HALF_OFF' }
+     | { type: 'TOGGLE_GIRLS_PARTY' }
+     | { type: 'TOGGLE_APPRECIATION_DAY' }
+-    | { type: 'TOGGLE_FIRST_LADY' }
++    | { type: 'TOGGLE_SEVEN_LUCK' }
++    | { type: 'SET_INITIAL_SET_PRICE'; payload: number }
+     | { type: 'SET_ADDITIONAL_NOMINATION_COUNT'; payload: number }
+     | { type: 'TOGGLE_DEBUG_MODE' }
+-    | { type: 'ADD_ORDER'; payload: { name: string; price: number; isTaxIncluded?: boolean } }
++    | { type: 'ADD_ORDER'; payload: { name: string; price: number; isTaxIncluded?: boolean; canHalfOff?: boolean; isHalfOff?: boolean } }
+     | { type: 'UPDATE_ORDER_COUNT'; payload: { id: string; delta: number } }
++    | { type: 'SET_ORDER_COUNT'; payload: { id: string; count: number } }
++    | { type: 'TOGGLE_ORDER_HALF_OFF'; payload: string }
+     | { type: 'REMOVE_ORDER'; payload: string }
+     | { type: 'RESET' };
+ 
+@@ -99,14 +122,17 @@ function reducer(state: CalculatorState, action: Action): CalculatorState {
+             return { ...state, isGirlsParty: !state.isGirlsParty };
+         case 'TOGGLE_APPRECIATION_DAY':
+             return { ...state, isAppreciationDay: !state.isAppreciationDay };
+-        case 'TOGGLE_FIRST_LADY':
+-            return { ...state, isFirstLady: !state.isFirstLady };
++        case 'TOGGLE_SEVEN_LUCK':
++            return { ...state, isSevenLuck: !state.isSevenLuck };
++        case 'SET_INITIAL_SET_PRICE':
++            return { ...state, initialSetPrice: action.payload };
+         case 'SET_ADDITIONAL_NOMINATION_COUNT':
+             return { ...state, additionalNominationCount: Math.max(0, action.payload) };
+         case 'TOGGLE_DEBUG_MODE':
+             return { ...state, isDebugMode: !state.isDebugMode };
+         case 'ADD_ORDER': {
+-            const existing = state.orders.find(o => o.name === action.payload.name);
++            const baseName = action.payload.name;
++            const existing = state.orders.find(o => o.baseName === baseName);
+             if (existing) {
+                 return {
+                     ...state,
+@@ -115,12 +141,21 @@ function reducer(state: CalculatorState, action: Action): CalculatorState {
+                     )
+                 };
+             }
++            const isHalf = action.payload.isHalfOff || false;
++            const originalPrice = action.payload.price;
++            const effectivePrice = isHalf ? calcHalfOffPrice(baseName, originalPrice) : originalPrice;
++            const displayName = isHalf ? `${baseName} (蜊企｡・` : baseName;
++
+             const newOrder: OrderItem = {
+                 id: Date.now().toString(),
+-                name: action.payload.name,
+-                price: action.payload.price,
++                name: displayName,
++                baseName,
++                price: effectivePrice,
++                originalPrice,
+                 count: 1,
+                 isTaxIncluded: action.payload.isTaxIncluded,
++                canHalfOff: action.payload.canHalfOff,
++                isHalfOff: isHalf,
+             };
+             return { ...state, orders: [...state.orders, newOrder] };
+         }
+@@ -133,13 +168,41 @@ function reducer(state: CalculatorState, action: Action): CalculatorState {
+                         return { ...o, count: newCount };
+                     }
+                     return o;
+-                }).filter(o => o.count > 0)
++                }).filter(o => o.count > 0 || o.isPinned)
++            };
++        case 'SET_ORDER_COUNT':
++            return {
++                ...state,
++                orders: state.orders.map(o => {
++                    if (o.id === action.payload.id) {
++                        return { ...o, count: Math.max(0, action.payload.count) };
++                    }
++                    return o;
++                }).filter(o => o.count > 0 || o.isPinned)
++            };
++        case 'TOGGLE_ORDER_HALF_OFF':
++            return {
++                ...state,
++                orders: state.orders.map(o => {
++                    if (o.id === action.payload && o.canHalfOff) {
++                        const newHalfOff = !o.isHalfOff;
++                        const newPrice = newHalfOff ? calcHalfOffPrice(o.baseName, o.originalPrice) : o.originalPrice;
++                        return {
++                            ...o,
++                            isHalfOff: newHalfOff,
++                            price: newPrice,
++                            name: newHalfOff ? `${o.baseName} (蜊企｡・` : o.baseName,
++                        };
++                    }
++                    return o;
++                })
+             };
+         case 'REMOVE_ORDER':
+             return { ...state, orders: state.orders.filter(o => o.id !== action.payload) };
+         case 'RESET':
+             return {
+                 ...INITIAL_STATE,
++                orders: [...PINNED_ORDERS],
+                 currentTime: state.currentTime,
+                 isDebugMode: state.isDebugMode,
+             };
+@@ -153,7 +216,7 @@ export function useCalculator() {
+ 
+     const calculate = (): CalculationResult => {
+         const {
+-            customerType, entryTime, currentTime, dohan, isSetHalfOff, orders,
++            customerType, initialSetPrice, entryTime, currentTime, dohan, isSetHalfOff, orders,
+             isAppreciationDay, additionalNominationCount
+         } = state;
+ 
+@@ -177,6 +240,11 @@ export function useCalculator() {
+             extUnitCost = PRICES.regular.ext;
+             nomPrice = PRICES.regular.nom;
+             tcPrice = PRICES.regular.tc;
++        } else if (customerType === 'initial') {
++            baseSetPrice = initialSetPrice;
++            extUnitCost = PRICES.initial.ext;
++            nomPrice = PRICES.initial.nom;
++            tcPrice = PRICES.initial.tc;
+         } else {
+             baseSetPrice = PRICES[customerType].set;
+             extUnitCost = PRICES[customerType].ext;
+@@ -195,13 +263,14 @@ export function useCalculator() {
+         const tcTotal = tcPrice;
+         const additionalNominationTotal = additionalNominationCount * 3000;
+ 
+-        // Orders Total - Separate Taxable and Tax-Included
+-        const taxableOrders = orders.filter(o => !o.isTaxIncluded);
+-        const taxIncludedOrders = orders.filter(o => o.isTaxIncluded);
++        // Orders Total - count > 0 縺ｮ縺ｿ險育ｮ怜ｯｾ雎｡
++        const activeOrders = orders.filter(o => o.count > 0);
++        const taxableOrders = activeOrders.filter(o => !o.isTaxIncluded);
++        const taxIncludedOrders = activeOrders.filter(o => o.isTaxIncluded);
+ 
+         const taxableOrdersTotal = taxableOrders.reduce((sum, item) => sum + (item.price * item.count), 0);
+         const taxIncludedOrdersTotal = taxIncludedOrders.reduce((sum, item) => sum + (item.price * item.count), 0);
+-        const totalItemsCount = orders.reduce((sum, item) => sum + item.count, 0);
++        const totalItemsCount = activeOrders.reduce((sum, item) => sum + item.count, 0);
+ 
+         // Tax Rate
+         let taxRate = 0.35;
+@@ -209,9 +278,8 @@ export function useCalculator() {
+             taxRate = 0;
+         }
+ 
+-        // --- Helper to calculate total for a specific duration (hours) ---
+-        const calculateForDuration = (durationHours: number) => {
+-            // R types have 2-hour initial set, others have 1-hour
++        // --- 謖・ｮ壽凾髢薙〒縺ｮ蜀・ｨｳ繧堤函謌・---
++        const buildBreakdown = (durationHours: number): { breakdown: BreakdownItem[]; finalTotal: number } => {
+             const initialSetHours = (customerType === 'r_within' || customerType === 'r_after') ? 2 : 1;
+             const extensionCount = Math.max(0, durationHours - initialSetHours);
+             const setAndExtTotal = baseSetPrice + (extensionCount * extUnitCost);
+@@ -221,24 +289,32 @@ export function useCalculator() {
+             const totalRaw = subTotal + taxAmountRaw + taxIncludedOrdersTotal;
+             const finalTotal = Math.ceil(totalRaw / 100) * 100;
+ 
+-            return {
+-                setAndExtTotal,
+-                subTotal,
+-                finalTotal,
+-                taxAmountDisplay: Math.ceil(taxAmountRaw)
+-            };
++            const breakdown: BreakdownItem[] = [
++                { label: `繧ｻ繝・ヨ譁咎≡${(isSetHalfOff || isAppreciationDay) ? '(蜊企｡・' : ''} (蟒ｶ髟ｷ霎ｼ)`, amount: setAndExtTotal },
++                { label: '謖・錐譁・, amount: nomTotal },
++                { label: `隍・焚謖・錐譁・(${additionalNominationCount}莠ｺ)`, amount: additionalNominationTotal },
++                { label: '蜷御ｼｴ譁・, amount: dohanTotal },
++                { label: 'T.C', amount: tcTotal },
++                ...activeOrders.map(o => ({
++                    label: `${o.name} x${o.count}${o.isTaxIncluded ? ' (遞手ｾｼ)' : ''}`,
++                    amount: o.price * o.count
++                })),
++                { label: '蟆剰ｨ・(隱ｲ遞主ｯｾ雎｡)', amount: subTotal, isTotal: true },
++                { label: `TAX/SVC (${(taxRate * 100).toFixed(0)}%)`, amount: Math.ceil(taxAmountRaw), note: '(蜊√・菴堺ｻ･荳句・繧贋ｸ翫￡)' }
++            ];
++
++            return { breakdown, finalTotal };
+         };
+ 
+         // --- Generate Schedule ---
+         const schedule: PriceScheduleItem[] = [];
+ 
+         let loopTimeH = normalizedEntryH + 1;
+-        let loopTimeM = entryM;
++        const loopTimeM = entryM;
+ 
+-        // Loop until just before closing hour to add hourly increments
+         while (loopTimeH < CLOSING_HOUR) {
+             const duration = loopTimeH - normalizedEntryH;
+-            const { finalTotal } = calculateForDuration(duration);
++            const { finalTotal, breakdown: schBreakdown } = buildBreakdown(duration);
+ 
+             const displayH = loopTimeH >= 24 ? loopTimeH - 24 : loopTimeH;
+             const displayM = loopTimeM.toString().padStart(2, '0');
+@@ -246,60 +322,41 @@ export function useCalculator() {
+ 
+             schedule.push({
+                 timeLimit: timeLabel,
+-                totalPrice: finalTotal
++                totalPrice: finalTotal,
++                breakdown: schBreakdown,
+             });
+ 
+             loopTimeH++;
+         }
+ 
+-        // Always add the Closing Time (25:00 / 01:00) entry
++        // Closing Time (25:00 / 01:00)
+         const entryTotalMins = normalizedEntryH * 60 + entryM;
+-        const closingTotalMins = CLOSING_HOUR * 60; // 25 * 60 = 1500
++        const closingTotalMins = CLOSING_HOUR * 60;
+         const durationMins = closingTotalMins - entryTotalMins;
+         const durationSets = Math.ceil(durationMins / 60);
+ 
+-        const { finalTotal: closingTotal } = calculateForDuration(durationSets);
++        const { finalTotal: closingTotal, breakdown: closingBreakdown } = buildBreakdown(durationSets);
+ 
+         schedule.push({
+-            timeLimit: '01:00', // Fixed label for 25:00
+-            totalPrice: closingTotal
++            timeLimit: '01:00',
++            totalPrice: closingTotal,
++            breakdown: closingBreakdown,
+         });
+ 
+-        // --- Current Total Calculation ---
+-        // Calculate duration from Entry Time to Current Time
++        // --- Current Total ---
+         let currentDurationSets = 1;
+-
+-        // Calculate minutes difference
+         const currentTotalMins = normalizedCurrentH * 60 + currentM;
+         const diffMins = currentTotalMins - entryTotalMins;
+ 
+         if (diffMins > 0) {
+             currentDurationSets = Math.ceil(diffMins / 60);
+-        } else {
+-            // If current time is before entry time (e.g. debug or just entered), default to 1 set
+-            currentDurationSets = 1;
+         }
+ 
+-        const currentCalc = calculateForDuration(currentDurationSets);
+-
+-        // --- Breakdown ---
+-        const breakdown: BreakdownItem[] = [
+-            { label: `繧ｻ繝・ヨ譁咎≡${(isSetHalfOff || isAppreciationDay) ? '(蜊企｡・' : ''} (蟒ｶ髟ｷ霎ｼ)`, amount: currentCalc.setAndExtTotal },
+-            { label: '謖・錐譁・, amount: nomTotal },
+-            { label: `隍・焚謖・錐譁・(${additionalNominationCount}莠ｺ)`, amount: additionalNominationTotal },
+-            { label: '蜷御ｼｴ譁・, amount: dohanTotal },
+-            { label: 'T.C', amount: tcTotal },
+-            ...orders.map(o => ({
+-                label: `${o.name} x${o.count}${o.isTaxIncluded ? ' (遞手ｾｼ)' : ''}`,
+-                amount: o.price * o.count
+-            })),
+-            { label: '蟆剰ｨ・(隱ｲ遞主ｯｾ雎｡)', amount: currentCalc.subTotal, isTotal: true },
+-            { label: `TAX/SVC (${(taxRate * 100).toFixed(0)}%)`, amount: currentCalc.taxAmountDisplay, note: '(蜊√・菴堺ｻ･荳句・繧贋ｸ翫￡)' }
+-        ];
++        const { breakdown: currentBreakdown, finalTotal: currentFinalTotal } = buildBreakdown(currentDurationSets);
+ 
+         return {
+-            currentTotal: currentCalc.finalTotal,
+-            breakdown,
++            currentTotal: currentFinalTotal,
++            breakdown: currentBreakdown,
+             schedule,
+             taxRate
+         };

@@ -14,80 +14,37 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
     onCurrentTimeChange
 }) => {
     return (
-        <div style={{
-            width: '280px',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-        }}>
-            <h3 style={{
-                marginBottom: '16px',
-                color: 'var(--accent-color)',
-                fontSize: '1.1rem',
-                fontWeight: 'bold'
-            }}>
+        <div className="w-[280px] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <h3 className="mb-4 text-[var(--accent-color)] text-lg font-bold">
                 デバッグモード
             </h3>
 
-            {/* Debug Mode Toggle */}
+            {/* デバッグモード トグル */}
             <div
                 onClick={onDebugModeToggle}
-                style={{
-                    cursor: 'pointer',
-                    background: 'var(--input-bg)',
-                    padding: '12px',
-                    borderRadius: 'var(--radius-md)',
-                    border: isDebugMode ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
-                    marginBottom: '16px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                }}
+                className={`cursor-pointer bg-[var(--input-bg)] p-3 rounded-lg mb-4 flex justify-between items-center select-none transition-all border ${
+                    isDebugMode ? 'border-[var(--accent-color)] shadow-[0_0_8px_rgba(212,175,55,0.2)]' : 'border-[var(--border-color)] hover:border-gray-500'
+                }`}
             >
-                <span style={{ fontWeight: 'bold' }}>デバッグモード</span>
-                <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    border: '2px solid var(--accent-color)',
-                    background: isDebugMode ? 'var(--accent-color)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    {isDebugMode && <span style={{ color: '#000', fontWeight: 'bold' }}>✓</span>}
+                <span className="font-bold">デバッグモード</span>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    isDebugMode ? 'border-[var(--accent-color)] bg-[var(--accent-color)]' : 'border-[var(--accent-color)] bg-transparent'
+                }`}>
+                    {isDebugMode && <span className="text-black font-bold text-sm leading-none">✓</span>}
                 </div>
             </div>
 
-            {/* Current Time Input */}
+            {/* 時間入力 */}
             {isDebugMode && (
                 <div>
-                    <label style={{
-                        display: 'block',
-                        marginBottom: '8px',
-                        fontWeight: 'bold',
-                        color: 'var(--accent-color)',
-                        fontSize: '0.9rem'
-                    }}>
+                    <label className="block mb-2 font-bold text-[var(--accent-color)] text-sm">
                         現在時間
                     </label>
                     <input
                         type="time"
                         value={currentTime}
                         onChange={(e) => onCurrentTimeChange(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--border-color)',
-                            background: 'var(--input-bg)',
-                            color: 'var(--text-color)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            colorScheme: 'dark'
-                        }}
+                        className="w-full p-3 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] text-base outline-none focus:border-[var(--gold-color)] transition-colors [color-scheme:dark]"
                     />
                 </div>
             )}
