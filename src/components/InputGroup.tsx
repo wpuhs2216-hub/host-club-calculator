@@ -238,7 +238,8 @@ export const TimeInput: React.FC<TimeInputProps> = ({ label, value, onChange }) 
                 type="time"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full max-w-full box-border p-3 rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] text-white text-base outline-none focus:border-[var(--gold-color)] transition-colors [color-scheme:dark]"
+                style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+                className="p-3 rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] text-white text-base outline-none focus:border-[var(--gold-color)] transition-colors [color-scheme:dark]"
             />
         </div>
     );

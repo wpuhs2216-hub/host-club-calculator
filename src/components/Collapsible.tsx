@@ -35,9 +35,10 @@ export const Collapsible: React.FC<CollapsibleProps> = ({ title, children, defau
             <div style={{
                 maxHeight: isOpen ? '2000px' : '0px',
                 opacity: isOpen ? 1 : 0,
-                overflow: 'hidden',
+                overflowY: 'hidden',
+                overflowX: 'visible',
                 transition: 'all 0.3s ease-in-out',
-                padding: isOpen ? '16px' : '0 16px',
+                padding: isOpen ? '12px' : '0 12px',
             }}>
                 {children}
             </div>

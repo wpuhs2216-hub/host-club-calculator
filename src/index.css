@@ -98,6 +98,13 @@ body {
 /* セレクト・インプット系 */
 select, input[type="time"], input[type="number"], input[type="text"] {
   caret-color: var(--accent-color);
+  min-width: 0;
+}
+
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
 }
 
 input[type="range"] {
