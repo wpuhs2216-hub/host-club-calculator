@@ -66,13 +66,15 @@ function App() {
       {/* ライトモード（左上固定） */}
       <button
         onClick={() => setLightMode(!lightMode)}
-        className="fixed top-4 left-4 z-[999] w-10 h-10 rounded-full border border-[var(--border-color)] flex items-center justify-center text-lg transition-all outline-none cursor-pointer bg-[var(--input-bg)] text-[var(--text-color)] hover:border-[var(--gold-color)]"
+        style={{ top: 'max(1rem, env(safe-area-inset-top, 0px))' }}
+        className="fixed left-4 z-[999] w-10 h-10 rounded-full border border-[var(--border-color)] flex items-center justify-center text-lg transition-all outline-none cursor-pointer bg-[var(--input-bg)] text-[var(--text-color)] hover:border-[var(--gold-color)]"
       >{lightMode ? '◐' : '◑'}</button>
 
       {/* 管理者ボタン（右上固定） */}
       <button
         onClick={() => setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings')}
-        className={`fixed top-4 right-4 z-[999] w-10 h-10 rounded-full border flex items-center justify-center text-lg transition-all outline-none cursor-pointer ${
+        style={{ top: 'max(1rem, env(safe-area-inset-top, 0px))' }}
+        className={`fixed right-4 z-[999] w-10 h-10 rounded-full border flex items-center justify-center text-lg transition-all outline-none cursor-pointer ${
           currentPage === 'settings' ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:bg-[#444]'
         }`}
       >◈</button>
