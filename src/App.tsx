@@ -247,6 +247,8 @@ function App() {
               <ResultDisplay
                 currentTotal={result.currentTotal}
                 breakdown={result.breakdown}
+                previousTotal={result.previousTotal}
+                previousBreakdown={result.previousBreakdown}
                 schedule={result.schedule}
                 taxRate={result.taxRate}
                 currentTime={state.currentTime}

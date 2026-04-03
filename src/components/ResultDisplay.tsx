@@ -4,14 +4,17 @@ import type { BreakdownItem, PriceScheduleItem } from '../hooks/useCalculator';
 interface ResultDisplayProps {
     currentTotal: number;
     breakdown: BreakdownItem[];
+    previousTotal: number | null;
+    previousBreakdown: BreakdownItem[] | null;
     schedule: PriceScheduleItem[];
     taxRate: number;
     currentTime: string;
     isOutOfHours: boolean;
 }
 
-export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, schedule, currentTime, isOutOfHours }) => {
+export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, previousTotal, previousBreakdown, schedule, currentTime, isOutOfHours }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [showPrevious, setShowPrevious] = useState(false);
 
     const toggleExpand = (index: number) => {
         setExpandedIndex(expandedIndex === index ? null : index);
@@ -29,6 +32,26 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
                     ¥{currentTotal.toLocaleString()}
                 </div>
             </div>
+
+            {/* ワンセット前の料金 */}
+            {previousTotal !== null && previousBreakdown && (
+                <div className="border-t border-gray-700 pt-3 mb-3">
+                    <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowPrevious(!showPrevious)}>
+                        <h4 className="text-sm text-gray-400">1つ前のセット料金 (税込)</h4>
+                        <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-yellow-400">¥{previousTotal.toLocaleString()}</span>
+                            <span className="text-[0.7rem] text-gray-500">{showPrevious ? '▲' : '▼'}</span>
+                        </div>
+                    </div>
+                    {showPrevious && (
+                        <div className="mt-2 bg-[rgba(255,255,255,0.03)] rounded-lg p-3">
+                            {previousBreakdown.map((item, index) => (
+                                <BreakdownRow key={index} label={item.label} amount={item.amount} isTotal={item.isTotal} note={item.note} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* 詳細内訳 */}
             <div className="border-t border-gray-700 pt-4 mb-5">

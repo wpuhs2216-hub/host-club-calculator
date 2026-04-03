@@ -49,6 +49,8 @@ export interface PriceScheduleItem {
 export interface CalculationResult {
     currentTotal: number;
     breakdown: BreakdownItem[];
+    previousTotal: number | null;
+    previousBreakdown: BreakdownItem[] | null;
     schedule: PriceScheduleItem[];
     taxRate: number;
     isOutOfHours: boolean;
@@ -458,7 +460,16 @@ export function calculateResult(state: CalculatorState, config: StoreConfig = GE
 
     const { breakdown: currentBreakdown, finalTotal: currentFinalTotal } = buildBreakdown(currentDurationSets);
 
-    return { currentTotal: currentFinalTotal, breakdown: currentBreakdown, schedule, taxRate, isOutOfHours };
+    // ワンセット前の料金（延長が1回以上ある場合のみ）
+    let previousTotal: number | null = null;
+    let previousBreakdown: BreakdownItem[] | null = null;
+    if (currentDurationSets > 1) {
+        const prev = buildBreakdown(currentDurationSets - 1);
+        previousTotal = prev.finalTotal;
+        previousBreakdown = prev.breakdown;
+    }
+
+    return { currentTotal: currentFinalTotal, breakdown: currentBreakdown, previousTotal, previousBreakdown, schedule, taxRate, isOutOfHours };
 }
 
 export function useCalculator() {
