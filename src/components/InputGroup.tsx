@@ -158,14 +158,14 @@ export const InputGroup: React.FC<InputGroupProps> = ({
                 onChange={onEntryTimeChange}
             />
 
-            <Collapsible title="◈ 同伴・割引オプション">
-                {/* オプション */}
-                <Toggle
-                    label="同伴"
-                    checked={dohan}
-                    onChange={onDohanToggle}
-                    price={3000}
-                />
+            <Toggle
+                label="同伴"
+                checked={dohan}
+                onChange={onDohanToggle}
+                price={3000}
+            />
+
+            <Collapsible title="◈ 割引オプション">
                 <Toggle
                     label="セット料金半額"
                     checked={isSetHalfOff}

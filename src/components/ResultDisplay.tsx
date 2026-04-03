@@ -10,11 +10,13 @@ interface ResultDisplayProps {
     taxRate: number;
     currentTime: string;
     isOutOfHours: boolean;
+    onTimeOverride?: (time: string | null) => void;
 }
 
-export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, previousTotal, previousBreakdown, schedule, currentTime, isOutOfHours }) => {
+export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, previousTotal, previousBreakdown, schedule, currentTime, isOutOfHours, onTimeOverride }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
     const [showPrevious, setShowPrevious] = useState(false);
+    const [isEditingTime, setIsEditingTime] = useState(false);
 
     const toggleExpand = (index: number) => {
         setExpandedIndex(expandedIndex === index ? null : index);
@@ -25,7 +27,26 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
             {/* 合計表示 */}
             <div className="text-center mb-4">
                 <div className="text-lg font-bold text-white mb-2">
-                    {isOutOfHours ? '１時間分の料金' : `現在時刻: ${currentTime}`}
+                    {isOutOfHours ? '１時間分の料金' : isEditingTime ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm text-gray-400">会計時刻:</span>
+                            <input
+                                type="time"
+                                value={currentTime}
+                                onChange={(e) => onTimeOverride?.(e.target.value)}
+                                autoFocus
+                                className="bg-[var(--input-bg)] border border-[var(--accent-color)] rounded-md px-2 py-1 text-white text-base outline-none [color-scheme:dark] w-28"
+                            />
+                            <button
+                                onClick={() => { setIsEditingTime(false); onTimeOverride?.(null); }}
+                                className="text-gray-400 hover:text-white text-sm cursor-pointer bg-transparent border-none"
+                            >✕</button>
+                        </div>
+                    ) : (
+                        <span className="cursor-pointer hover:text-[var(--accent-color)] transition-colors" onClick={() => setIsEditingTime(true)}>
+                            現在時刻: {currentTime}
+                        </span>
+                    )}
                 </div>
                 <div className="text-sm text-gray-400">現在のお会計 (税込)</div>
                 <div className="text-4xl font-bold text-[var(--accent-color)] mt-1">

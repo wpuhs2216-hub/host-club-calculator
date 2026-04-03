@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
 import type { CustomerType, Action } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
@@ -9,9 +10,18 @@ import { BudgetRecommender } from './components/BudgetRecommender';
 import { Collapsible } from './components/Collapsible';
 import { LOPage } from './components/LOPage';
 import { SettingsPage } from './components/SettingsPage';
+import { UpdateNotice } from './components/UpdateNotice';
 import { useStoreConfig } from './contexts/StoreConfigContext';
+import { APP_VERSION } from './version';
 
 type PageTab = 'calculator' | 'lo' | 'settings';
+
+// PWA即時更新: 新しいSWが検出されたら自動リロード
+const updateSW = registerSW({
+  onNeedRefresh() {
+    updateSW(true);
+  },
+});
 
 function App() {
   const {
@@ -19,6 +29,13 @@ function App() {
     setActiveTable, setActiveSlip, addSlip, removeSlip, renameSlip, multiDispatch
   } = useMultiTableCalculator();
   const { config } = useStoreConfig();
+
+  // アップデート通知
+  const [showUpdateNotice, setShowUpdateNotice] = useState(() => {
+    try {
+      return localStorage.getItem('app-version') !== APP_VERSION;
+    } catch { return false; }
+  });
 
   // UI設定の永続化
   const loadUISetting = (key: string, fallback: boolean) => {
@@ -45,18 +62,22 @@ function App() {
     }
   }, [showLO, activeTable.slips.length]);
 
-  // 現在時刻の自動更新
+  // 時刻オーバーライド管理（会計時刻タップ入力用）
+  const timeOverrideRef = useRef(false);
+
+  // 現在時刻の自動更新（10秒間隔、全伝票一括）
   useEffect(() => {
     const updateTime = () => {
+      if (timeOverrideRef.current) return;
       if (state && !state.isDebugMode) {
         const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        dispatch({ type: 'SET_CURRENT_TIME', payload: `${hours}:${minutes}` });
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        dispatch({ type: 'SET_CURRENT_TIME', payload: timeStr });
+        multiDispatch({ type: 'UPDATE_ALL_CURRENT_TIME', payload: timeStr });
       }
     };
     updateTime();
-    const timer = setInterval(updateTime, 60000);
+    const timer = setInterval(updateTime, 10000);
     return () => clearInterval(timer);
   }, [activeSlipId, state?.isDebugMode]);
 
@@ -253,6 +274,14 @@ function App() {
                 taxRate={result.taxRate}
                 currentTime={state.currentTime}
                 isOutOfHours={result.isOutOfHours}
+                onTimeOverride={(time) => {
+                  if (time) {
+                    timeOverrideRef.current = true;
+                    dispatch({ type: 'SET_CURRENT_TIME', payload: time });
+                  } else {
+                    timeOverrideRef.current = false;
+                  }
+                }}
               />
             </>
           ) : (
@@ -268,7 +297,8 @@ function App() {
       {/* LOページ */}
       {currentPage === 'lo' && (
         <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip}
-          onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })} />
+          onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })}
+          onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })} />
       )}
 
       {/* 設定ページ */}
@@ -285,6 +315,13 @@ function App() {
         />
       )}
 
+      {/* アップデート通知モーダル */}
+      {showUpdateNotice && (
+        <UpdateNotice onClose={() => {
+          setShowUpdateNotice(false);
+          try { localStorage.setItem('app-version', APP_VERSION); } catch {}
+        }} />
+      )}
     </Layout>
   );
 }

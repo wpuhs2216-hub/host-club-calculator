@@ -49,6 +49,8 @@ export type MultiAction =
     | { type: 'SLIP_ACTION'; payload: Action }
     | { type: 'SLIP_ACTION_FOR'; payload: { tableId: string; slipId: string; action: Action } }
     | { type: 'MOVE_SLIP'; payload: { fromTableId: string; slipId: string; toTableId: string } }
+    | { type: 'UPDATE_ALL_CURRENT_TIME'; payload: string }
+    | { type: 'CLEAR_ALL_SLIPS' }
     | { type: 'REINIT'; payload: { config: StoreConfig } };
 
 function multiReducer(state: MultiTableState, action: MultiAction, config: StoreConfig): MultiTableState {
@@ -125,6 +127,25 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
                 })
             };
         }
+        case 'UPDATE_ALL_CURRENT_TIME': {
+            const time = action.payload;
+            return {
+                ...state,
+                tables: state.tables.map(t => ({
+                    ...t,
+                    slips: t.slips.map(s => ({
+                        ...s,
+                        state: { ...s.state, currentTime: time },
+                    })),
+                })),
+            };
+        }
+        case 'CLEAR_ALL_SLIPS':
+            return {
+                ...state,
+                tables: state.tables.map(t => ({ ...t, slips: [] })),
+                activeSlipId: null,
+            };
         case 'REINIT':
             return createInitialMultiState(action.payload.config);
         default:
