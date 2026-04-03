@@ -19,7 +19,8 @@ export default defineConfig({
         background_color: '#0a0e17',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '/host-club-calculator/',
+        scope: '/host-club-calculator/',
         icons: [
           {
             src: 'pwa-192.svg',
