@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import type { TableInfo } from '../hooks/useMultiTableCalculator';
 import type { Action, CustomerType } from '../hooks/useCalculator';
 import { calculateResult } from '../hooks/useCalculator';
+import type { StoreConfig } from '../types/storeConfig';
 
 interface LOPageProps {
     tables: TableInfo[];
+    config: StoreConfig;
     dispatchForSlip: (tableId: string, slipId: string, action: Action) => void;
+    onMoveSlip?: (fromTableId: string, slipId: string, toTableId: string) => void;
 }
 
 const CUSTOMER_TYPE_LABELS: Record<CustomerType, string> = {
@@ -15,13 +18,14 @@ const CUSTOMER_TYPE_LABELS: Record<CustomerType, string> = {
     regular: '正規',
 };
 
-export const LOPage: React.FC<LOPageProps> = ({ tables, dispatchForSlip }) => {
+export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip, onMoveSlip }) => {
     const [editingKey, setEditingKey] = useState<string | null>(null);
+    const [movingSlipKey, setMovingSlipKey] = useState<string | null>(null);
 
     return (
         <div className="flex flex-col gap-4">
             <h2 className="text-xl font-bold text-[var(--gold-color)] flex items-center gap-2">
-                📊 LO（ラストオーダー一覧）
+                ◆ LO（ラストオーダー一覧）
             </h2>
 
             {tables.map(table => (
@@ -39,7 +43,7 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, dispatchForSlip }) => {
 
                     {/* 各伝票 */}
                     {table.slips.map(slip => {
-                        const result = calculateResult(slip.state, { loCapEnabled: true });
+                        const result = calculateResult(slip.state, config, { loCapEnabled: true });
                         const closingResult = result.schedule[result.schedule.length - 1];
                         const editKey = `${table.id}-${slip.id}`;
                         const isEditing = editingKey === editKey;
@@ -74,16 +78,44 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, dispatchForSlip }) => {
                                             </div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => setEditingKey(isEditing ? null : editKey)}
-                                        className={`mt-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
-                                            isEditing
-                                                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
-                                                : 'bg-transparent text-[var(--gold-color)] border-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)]'
-                                        }`}
-                                    >
-                                        {isEditing ? '✓ 閉じる' : '✏️ 編集'}
-                                    </button>
+                                    <div className="flex gap-2 mt-2">
+                                        <button
+                                            onClick={() => setEditingKey(isEditing ? null : editKey)}
+                                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
+                                                isEditing
+                                                    ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                                                    : 'bg-transparent text-[var(--gold-color)] border-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)]'
+                                            }`}
+                                        >
+                                            {isEditing ? '✓ 閉じる' : '▹ 編集'}
+                                        </button>
+                                        {onMoveSlip && (
+                                            <button
+                                                onClick={() => setMovingSlipKey(movingSlipKey === editKey ? null : editKey)}
+                                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
+                                                    movingSlipKey === editKey
+                                                        ? 'bg-blue-500 text-white border-blue-500'
+                                                        : 'bg-transparent text-blue-400 border-blue-400 hover:bg-[rgba(59,130,246,0.1)]'
+                                                }`}
+                                            >
+                                                {movingSlipKey === editKey ? '✕ キャンセル' : '↔ 移動'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {/* 伝票移動先選択 */}
+                                    {movingSlipKey === editKey && onMoveSlip && (
+                                        <div className="mt-2 p-3 rounded-lg bg-[rgba(59,130,246,0.08)] border border-blue-500/30">
+                                            <div className="text-xs text-blue-400 mb-2">移動先テーブルを選択</div>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {tables.filter(t => t.id !== table.id).map(t => (
+                                                    <button key={t.id}
+                                                        onClick={() => { onMoveSlip(table.id, slip.id, t.id); setMovingSlipKey(null); }}
+                                                        className="px-3 py-1.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 text-sm font-bold cursor-pointer hover:bg-blue-500/40 transition-colors"
+                                                    >{t.name}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* 簡易編集 */}

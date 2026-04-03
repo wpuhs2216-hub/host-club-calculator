@@ -9,8 +9,11 @@ export const Layout: React.FC<LayoutProps> = ({ storeName, children }) => {
     return (
         <div className="max-w-2xl mx-auto px-4 py-6">
             <header className="text-center mb-4">
-                <h1 className="text-2xl font-bold mb-1">{storeName || '伝票計算システム'}</h1>
-                <div className="w-16 h-0.5 bg-[var(--accent-color)] mx-auto"></div>
+                <h1 className="text-2xl font-bold mb-1">
+                    {storeName || '伝票計算'}
+                    <span className="ml-2">伝票計算</span>
+                </h1>
+                <div className="w-20 h-px mx-auto bg-gradient-to-r from-transparent via-[var(--accent-color)] to-transparent opacity-60"></div>
             </header>
             <main>
                 {children}

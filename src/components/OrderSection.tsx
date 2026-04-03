@@ -125,7 +125,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
             {/* ヘッダー */}
             <div className="p-4 border-b border-[var(--border-color)] bg-gradient-to-r from-[rgba(255,215,0,0.05)] to-transparent">
                 <h3 className="m-0 flex items-center gap-2 text-[var(--gold-color)] font-bold">
-                    <span>🥂</span> 商品オーダー
+                    <span>◇</span> 商品オーダー
                 </h3>
             </div>
 
@@ -222,7 +222,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                             }`}
                         >
                             <span className={`text-sm font-bold ${isHalfOff ? 'text-[var(--gold-color)]' : 'text-[var(--text-color)]'}`}>
-                                ✨ 半額適用 (¥{(selectedItem.name === 'カン' ? 700 : selectedItem.price / 2).toLocaleString()})
+                                ⟡ 半額適用 (¥{(selectedItem.name === 'カン' ? 700 : selectedItem.price / 2).toLocaleString()})
                             </span>
                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
                                 isHalfOff ? 'border-[var(--gold-color)] bg-[var(--gold-color)]' : 'border-[var(--border-color)] bg-transparent'

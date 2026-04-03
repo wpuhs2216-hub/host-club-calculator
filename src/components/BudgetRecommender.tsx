@@ -13,6 +13,7 @@ interface AddItem {
 interface BudgetRecommenderProps {
     result: CalculationResult;
     state: CalculatorState;
+    showDetail?: boolean;
     onAddOrders: (items: AddItem[]) => void;
 }
 
@@ -26,19 +27,23 @@ const SLIDER_MIN = 10000;
 const SLIDER_MAX = 200000;
 const SLIDER_STEP = 5000;
 
-export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, state, onAddOrders }) => {
+export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, state, showDetail = false, onAddOrders }) => {
     const [targetBudgetStr, setTargetBudgetStr] = useState<string>('');
     const [selectedTimeIdx, setSelectedTimeIdx] = useState<number | null>(null);
 
     const targetBudget = parseInt(targetBudgetStr.replace(/,/g, ''), 10);
 
-    // ピン留めアイテムの実効価格
+    // ピン留めアイテムの価格
     const pinnedCan = state.orders.find(o => o.baseName === 'カン');
     const pinnedShot = state.orders.find(o => o.baseName === 'ショット系');
+    // 計算用: 実効価格（半額適用後）
     const canPrice = pinnedCan?.price ?? 1500;
     const shotPrice = pinnedShot?.price ?? 2000;
     const canIsHalf = pinnedCan?.isHalfOff ?? false;
     const shotIsHalf = pinnedShot?.isHalfOff ?? false;
+    // 追加用: 元の価格（reducerが半額計算する）
+    const canOriginalPrice = pinnedCan?.originalPrice ?? 1500;
+    const shotOriginalPrice = pinnedShot?.originalPrice ?? 2000;
 
     // 半額ルール判定
     const isInitialOrR = state.customerType === 'initial' || state.customerType === 'r_within' || state.customerType === 'r_after';
@@ -119,10 +124,10 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
         const maxCans = findMaxItems(scheduleSlot, canPrice, remaining);
         if (maxCans > 0) {
             recs.push({
-                label: `🍺 カン ${maxCans}本`,
+                label: `▪ カン ${maxCans}本`,
                 desc: `¥${canPrice.toLocaleString()}/本${canIsHalf ? ' (半額)' : ''}`,
                 items: Array(maxCans).fill(null).map(() => ({
-                    name: canIsHalf ? 'カン (半額)' : 'カン', price: canPrice, canHalfOff: true, isHalfOff: canIsHalf,
+                    name: 'カン', price: canOriginalPrice, canHalfOff: true, isHalfOff: canIsHalf,
                 })),
                 cost: getSlotAddCost(scheduleSlot, maxCans * canPrice),
                 debug: getSlotAddCostDebug(scheduleSlot, maxCans * canPrice),
@@ -133,10 +138,10 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
         const maxShots = findMaxItems(scheduleSlot, shotPrice, remaining);
         if (maxShots > 0) {
             recs.push({
-                label: `🥃 ショット ${maxShots}本`,
+                label: `▫ ショット ${maxShots}本`,
                 desc: `¥${shotPrice.toLocaleString()}/本${shotIsHalf ? ' (半額)' : ''}`,
                 items: Array(maxShots).fill(null).map(() => ({
-                    name: shotIsHalf ? 'ショット系 (半額)' : 'ショット系', price: shotPrice, canHalfOff: true, isHalfOff: shotIsHalf,
+                    name: 'ショット系', price: shotOriginalPrice, canHalfOff: true, isHalfOff: shotIsHalf,
                 })),
                 cost: getSlotAddCost(scheduleSlot, maxShots * shotPrice),
                 debug: getSlotAddCostDebug(scheduleSlot, maxShots * shotPrice),
@@ -165,11 +170,11 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
             if (bestCans > 0 && bestShots > 0) {
                 const mixPreTax = bestCans * canPrice + bestShots * shotPrice;
                 recs.push({
-                    label: `🍺🥃 カン${bestCans} + ショット${bestShots}`,
+                    label: `▪▫ カン${bestCans} + ショット${bestShots}`,
                     desc: 'ミックス',
                     items: [
-                        ...Array(bestCans).fill(null).map(() => ({ name: canIsHalf ? 'カン (半額)' : 'カン', price: canPrice, canHalfOff: true, isHalfOff: canIsHalf })),
-                        ...Array(bestShots).fill(null).map(() => ({ name: shotIsHalf ? 'ショット系 (半額)' : 'ショット系', price: shotPrice, canHalfOff: true, isHalfOff: shotIsHalf })),
+                        ...Array(bestCans).fill(null).map(() => ({ name: 'カン', price: canOriginalPrice, canHalfOff: true, isHalfOff: canIsHalf })),
+                        ...Array(bestShots).fill(null).map(() => ({ name: 'ショット系', price: shotOriginalPrice, canHalfOff: true, isHalfOff: shotIsHalf })),
                     ],
                     cost: getSlotAddCost(scheduleSlot, mixPreTax),
                     debug: getSlotAddCostDebug(scheduleSlot, mixPreTax),
@@ -193,11 +198,10 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
 
         champagnes.slice(0, 2).forEach(ch => {
             recs.push({
-                label: `🥂 ${ch.name}${ch.isHalf ? ' (半額)' : ''}`,
+                label: `◆ ${ch.name}${ch.isHalf ? ' (半額)' : ''}`,
                 desc: `¥${ch.effectivePrice.toLocaleString()}${ch.isHalf ? ` (定価¥${ch.price.toLocaleString()})` : ''}`,
                 items: [{
-                    name: ch.isHalf ? `${ch.name} (半額)` : ch.name,
-                    price: ch.effectivePrice, canHalfOff: true, isHalfOff: ch.isHalf,
+                    name: ch.name, price: ch.price, canHalfOff: true, isHalfOff: ch.isHalf,
                 }],
                 cost: ch.cost,
                 debug: getSlotAddCostDebug(scheduleSlot, ch.effectivePrice),
@@ -297,7 +301,7 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
             {/* 滞在時間タブ */}
             {timeSlots.length > 0 && targetBudget >= result.currentTotal && (
                 <>
-                    <label className="text-sm text-gray-400 mb-2 block">⏰ 滞在時間を選択</label>
+                    <label className="text-sm text-gray-400 mb-2 block">◷ 滞在時間を選択</label>
                     <div className="flex gap-1.5 flex-wrap mb-4">
                         {timeSlots.map((slot, i) => (
                             <button
@@ -355,14 +359,28 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
                                 <div className="p-4">
                                     {recommendations.length > 0 ? (
                                         <div className="flex flex-col gap-3">
-                                            <h4 className="text-sm font-bold text-[var(--gold-color)]">🎯 この時間内で追加できるもの</h4>
+                                            <h4 className="text-sm font-bold text-[var(--gold-color)]">▸ この時間内で追加できるもの</h4>
                                             {recommendations.map((rec, i) => (
                                                 <div key={i} className="p-3 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] transition-all hover:border-[var(--gold-color)]">
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="font-bold text-white text-sm">{rec.label}</span>
-                                                        <span className="text-sm font-bold text-[var(--gold-color)]">+¥{rec.cost.toLocaleString()}</span>
+                                                        <div className="text-right">
+                                                            <div className="text-sm font-bold text-[var(--gold-color)]">+¥{rec.cost.toLocaleString()}</div>
+                                                            <div className="text-xs text-gray-400">合計 ¥{(timeSlots[selectedTimeIdx!].totalPrice + rec.cost).toLocaleString()}</div>
+                                                        </div>
                                                     </div>
                                                     <div className="text-xs text-gray-400 mb-2">{rec.desc}</div>
+                                                    {showDetail && rec.debug && (
+                                                        <div className="text-[0.65rem] text-gray-500 mb-2 p-2 rounded bg-black/30 font-mono leading-relaxed">
+                                                            <div>現小計: ¥{rec.debug.slotSubTotal.toLocaleString()}</div>
+                                                            <div>+ 追加(税前): ¥{rec.debug.addPreTax.toLocaleString()}</div>
+                                                            <div>= 新小計: ¥{rec.debug.newSubTotal.toLocaleString()}</div>
+                                                            <div>× TAX {(rec.debug.taxRate * 100).toFixed(0)}% = ¥{Math.ceil(rec.debug.taxAmount).toLocaleString()}</div>
+                                                            <div>= 税込: ¥{Math.ceil(rec.debug.newTotalRaw).toLocaleString()} → ¥{rec.debug.newTotalRounded.toLocaleString()} (100円切上)</div>
+                                                            <div className="border-t border-gray-700 mt-1 pt-1">現合計: ¥{rec.debug.slotTotal.toLocaleString()}</div>
+                                                            <div className="text-[var(--gold-color)]">差額: ¥{rec.debug.marginal.toLocaleString()}</div>
+                                                        </div>
+                                                    )}
                                                     <button
                                                         onClick={() => onAddOrders(rec.items)}
                                                         className="w-full p-2 rounded-lg bg-transparent border border-[var(--gold-color)] text-[var(--gold-color)] cursor-pointer text-sm font-bold transition-all hover:bg-[var(--gold-color)] hover:text-black"
@@ -381,7 +399,7 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
                                     {/* あと少しヒント */}
                                     {nearMiss.length > 0 && (
                                         <div className="mt-4 p-3 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[var(--border-color)]">
-                                            <h5 className="text-xs font-bold text-gray-400 mb-2">💡 あと少し予算を上げれば...</h5>
+                                            <h5 className="text-xs font-bold text-gray-400 mb-2">› あと少し予算を上げれば...</h5>
                                             {nearMiss.map((h, i) => (
                                                 <div key={i} className="text-sm text-gray-300 mb-1">
                                                     <span className="text-[var(--gold-color)]">{h.name}</span>

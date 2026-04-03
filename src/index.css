@@ -1,40 +1,110 @@
 @import "tailwindcss";
 
 @theme {
-  --color-gold: #d4af37;
-  --color-gold-hover: #b5952f;
-  --color-dark-bg: #1a1a1a;
-  --color-dark-card: #2d2d2d;
-  --color-dark-border: #444444;
-  --color-dark-input: #333333;
+  --color-gold: #00bcd4;
+  --color-gold-hover: #0097a7;
+  --color-dark-bg: #0a0e17;
+  --color-dark-card: #111827;
+  --color-dark-border: #1e293b;
+  --color-dark-input: #0f172a;
 }
 
 :root {
   --bg-color: var(--color-dark-bg);
   --card-bg: var(--color-dark-card);
-  --text-color: #ffffff;
+  --text-color: #e2e8f0;
   --accent-color: var(--color-gold);
   --accent-hover: var(--color-gold-hover);
   --border-color: var(--color-dark-border);
   --input-bg: var(--color-dark-input);
-  --danger-color: #ff4d4d;
-  --gold-color: #d4af37;
+  --danger-color: #f43f5e;
+  --gold-color: #00bcd4;
+  --dark-gold: #00b8d4;
 
-  --font-main: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --font-main: 'Inter', 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-card: 0 4px 24px rgba(0, 229, 255, 0.06);
 }
+
+/* ライトモード */
+.light-mode {
+  --bg-color: #ffffff;
+  --card-bg: #fafafa;
+  --text-color: #111111;
+  --accent-color: #1a1a1a;
+  --accent-hover: #333333;
+  --border-color: #e0e0e0;
+  --input-bg: #f5f5f5;
+  --danger-color: #d32f2f;
+  --gold-color: #1a1a1a;
+  --dark-gold: #333333;
+}
+
+.light-mode body {
+  background-image: none;
+  color: #111111;
+}
+
+/* ライトモード上書き */
+.light-mode .text-white { color: #111111 !important; }
+.light-mode .text-gray-300 { color: #444444 !important; }
+.light-mode .text-gray-400 { color: #666666 !important; }
+.light-mode .text-gray-500 { color: #888888 !important; }
+.light-mode .hover\:bg-\[\#444\]:hover { background-color: #e0e0e0 !important; }
+.light-mode .bg-black\/30 { background-color: rgba(0,0,0,0.04) !important; }
+.light-mode .bg-\[rgba\(0\,10\,20\,0\.8\)\] { background-color: #fafafa !important; border-color: #d0d0d0 !important; }
+
+/* 選択中ボタン: 黒背景なら白文字に */
+.light-mode .bg-\[var\(--gold-color\)\] { color: #ffffff !important; }
+.light-mode .text-black { color: #ffffff !important; }
+
+/* ただし入力欄内の text-black は黒のまま */
+.light-mode input.text-black,
+.light-mode input.bg-transparent { color: #111111 !important; }
+
+/* スクロールバー */
+.light-mode ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
 
 body {
   font-family: var(--font-main);
   background-color: var(--bg-color);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(0, 229, 255, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(99, 102, 241, 0.03) 0%, transparent 60%);
   color: var(--text-color);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-/* 予算逆算のinputでスピンボタンを消すスタイル */
+.light-mode body,
+.light-mode {
+  background-image: none;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* セレクト・インプット系 */
+select, input[type="time"], input[type="number"], input[type="text"] {
+  caret-color: var(--accent-color);
+}
+
+input[type="range"] {
+  accent-color: var(--accent-color);
+}
+
+/* スピンボタン非表示 */
 .hide-spin-button::-webkit-outer-spin-button,
 .hide-spin-button::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -42,4 +112,9 @@ body {
 }
 .hide-spin-button {
   -moz-appearance: textfield;
+}
+
+/* カード共通グロー */
+.card {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.03);
 }

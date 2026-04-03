@@ -16,8 +16,8 @@ export const Collapsible: React.FC<CollapsibleProps> = ({ title, children, defau
                 className="w-full flex justify-between items-center p-4 cursor-pointer"
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    background: isOpen ? 'var(--dark-gold)' : 'transparent',
-                    color: isOpen ? '#000' : 'var(--text-color)',
+                    background: isOpen ? 'rgba(0, 188, 212, 0.1)' : 'transparent',
+                    color: isOpen ? 'var(--accent-color)' : 'var(--text-color)',
                     border: 'none',
                     fontWeight: 'bold',
                     fontSize: '1rem',

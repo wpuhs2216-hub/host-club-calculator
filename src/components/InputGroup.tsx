@@ -158,7 +158,7 @@ export const InputGroup: React.FC<InputGroupProps> = ({
                 onChange={onEntryTimeChange}
             />
 
-            <Collapsible title="⚙️ 同伴・割引オプション">
+            <Collapsible title="◈ 同伴・割引オプション">
                 {/* オプション */}
                 <Toggle
                     label="同伴"

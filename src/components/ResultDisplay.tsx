@@ -18,7 +18,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
     };
 
     return (
-        <div className="bg-black rounded-xl p-5 mt-5 border border-[var(--accent-color)]">
+        <div className="bg-[rgba(0,10,20,0.8)] rounded-xl p-5 mt-5 border border-[var(--accent-color)] shadow-[0_0_30px_rgba(0,188,212,0.08)]">
             {/* 合計表示 */}
             <div className="text-center mb-4">
                 <div className="text-lg font-bold text-white mb-2">
