@@ -2,44 +2,22 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/pwa-192.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#ffd700" />
-    
-    <!-- Apple Touch Icon (iOS) -->
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <meta name="theme-color" content="#0a0e17" />
+
+    <link rel="apple-touch-icon" href="/pwa-192.svg" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="会計計算" />
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="ホストクラブの会計を簡単に計算できるアプリケーション。料金計算、時間管理、オーダー管理を一つのアプリで。" />
-    <meta name="keywords" content="ホストクラブ,会計,計算機,料金計算,オーダー管理" />
-    
-    <title>ホストクラブ会計計算機</title>
+    <meta name="apple-mobile-web-app-title" content="伝票計算" />
+
+    <meta name="description" content="ホストクラブ向け伝票計算システム" />
+
+    <title>GENTLY DIVA 伝票計算</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('ServiceWorker registered:', registration);
-            })
-            .catch((error) => {
-              console.log('ServiceWorker registration failed:', error);
-            });
-        });
-      }
-    </script>
   </body>
 </html>
