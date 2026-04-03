@@ -42,6 +42,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallback: '/host-club-calculator/index.html',
       },
     }),
   ],
