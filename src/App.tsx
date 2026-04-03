@@ -130,20 +130,28 @@ function App() {
       {/* 計算ページ */}
       {currentPage === 'calculator' && (
         <div className="flex flex-col gap-4">
-          {/* 運営モード: テーブル＋伝票選択 */}
+          {/* 運営モード: テーブル3×3グリッド＋伝票選択 */}
           {showLO && (
             <div className="bg-[var(--input-bg)] p-4 rounded-xl border border-[var(--border-color)]">
               <label className="text-xs text-gray-400 mb-2 block">テーブル</label>
-              <div className="flex gap-2 flex-wrap mb-3">
-                {tables.map(table => (
-                  <button key={table.id} onClick={() => setActiveTable(table.id)}
-                    className={`px-3 py-1.5 rounded-md border text-sm font-bold transition-colors ${
-                      activeTableId === table.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
-                    }`}>
-                    {table.name}
-                    {table.slips.length > 0 && <span className="ml-1 text-xs opacity-70">({table.slips.length})</span>}
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {tables.map(table => {
+                  const isActive = activeTableId === table.id;
+                  const hasSlips = table.slips.length > 0;
+                  return (
+                    <button key={table.id} onClick={() => setActiveTable(table.id)}
+                      className={`p-2.5 rounded-lg border text-center transition-colors ${
+                        isActive
+                          ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                          : hasSlips
+                            ? 'bg-transparent text-white border-[var(--accent-color)] hover:border-[var(--gold-color)]'
+                            : 'bg-transparent text-gray-500 border-[var(--border-color)] hover:border-gray-400'
+                      }`}>
+                      <div className="text-sm font-bold">{table.name}</div>
+                      {hasSlips && <div className={`text-xs mt-0.5 ${isActive ? 'text-black/60' : 'text-gray-400'}`}>{table.slips.length}伝票</div>}
+                    </button>
+                  );
+                })}
               </div>
               <label className="text-xs text-gray-400 mb-2 block">伝票</label>
               <div className="flex gap-2 flex-wrap items-center">
