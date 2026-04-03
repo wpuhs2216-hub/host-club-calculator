@@ -104,6 +104,11 @@ input[type="range"] {
   accent-color: var(--accent-color);
 }
 
+/* 全体のoverflow防止 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 /* スピンボタン非表示 */
 .hide-spin-button::-webkit-outer-spin-button,
 .hide-spin-button::-webkit-inner-spin-button {
