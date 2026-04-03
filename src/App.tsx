@@ -19,10 +19,19 @@ function App() {
     setActiveTable, setActiveSlip, addSlip, removeSlip, renameSlip, multiDispatch
   } = useMultiTableCalculator();
   const { config } = useStoreConfig();
+
+  // UI設定の永続化
+  const loadUISetting = (key: string, fallback: boolean) => {
+    try { const v = localStorage.getItem(key); return v !== null ? v === 'true' : fallback; } catch { return fallback; }
+  };
   const [currentPage, setCurrentPage] = useState<PageTab>('calculator');
-  const [showLO, setShowLO] = useState(false);
-  const [showAIDetail, setShowAIDetail] = useState(false);
-  const [lightMode, setLightMode] = useState(false);
+  const [showLO, setShowLO] = useState(() => loadUISetting('ui-showLO', false));
+  const [showAIDetail, setShowAIDetail] = useState(() => loadUISetting('ui-showAIDetail', false));
+  const [lightMode, setLightMode] = useState(() => loadUISetting('ui-lightMode', false));
+
+  const persistShowLO = (v: boolean) => { setShowLO(v); localStorage.setItem('ui-showLO', String(v)); };
+  const persistAIDetail = (v: boolean) => { setShowAIDetail(v); localStorage.setItem('ui-showAIDetail', String(v)); };
+  const persistLightMode = (v: boolean) => { setLightMode(v); localStorage.setItem('ui-lightMode', String(v)); };
 
   // ライトモード切替
   useEffect(() => {
@@ -65,7 +74,7 @@ function App() {
     <Layout storeName={config.storeName}>
       {/* ライトモード（左上固定） */}
       <button
-        onClick={() => setLightMode(!lightMode)}
+        onClick={() => persistLightMode(!lightMode)}
         style={{ top: 'max(1rem, env(safe-area-inset-top, 0px))' }}
         className="fixed left-4 z-[999] w-10 h-10 rounded-full border border-[var(--border-color)] flex items-center justify-center text-lg transition-all outline-none cursor-pointer bg-[var(--input-bg)] text-[var(--text-color)] hover:border-[var(--gold-color)]"
       >{lightMode ? '◐' : '◑'}</button>
@@ -268,9 +277,9 @@ function App() {
           onDebugModeToggle={() => dispatch({ type: 'TOGGLE_DEBUG_MODE' })}
           onCurrentTimeChange={(time) => dispatch({ type: 'SET_CURRENT_TIME', payload: time })}
           showLO={showLO}
-          onShowLOChange={setShowLO}
+          onShowLOChange={persistShowLO}
           showAIDetail={showAIDetail}
-          onShowAIDetailChange={setShowAIDetail}
+          onShowAIDetailChange={persistAIDetail}
         />
       )}
 
