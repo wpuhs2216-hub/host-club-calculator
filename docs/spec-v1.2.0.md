@@ -279,7 +279,71 @@ type SlipTab = 'basic' | 'orders' | 'checkout' | 'ai'
 
 ---
 
-## 8. 非機能要件
+## 8. バグ修正: 正規客のショットがデフォルト半額になる問題
+
+### 8-1. 現象
+- 正規（`regular`）客の伝票を作成すると、ショット系が最初から半額（1,000円）になっている
+- 正規客はショット半額の対象外のため、2,000円であるべき
+
+### 8-2. 原因（2箇所）
+
+#### 原因A: `defaultIsHalfOff: true` の無条件適用
+**ファイル:** `src/data/defaultStoreConfig.ts:65`
+```typescript
+{ name: 'ショット系', price: 2000, canHalfOff: true, defaultIsHalfOff: true },
+```
+`createPinnedOrders()` が `defaultIsHalfOff` を見て客種に関係なく半額状態で生成している。
+
+#### 原因B: `syncHalfOffOrders` が初回生成時に呼ばれない
+**ファイル:** `src/hooks/useCalculator.ts:123`
+```typescript
+const shouldShotHalf = customerType === 'initial' || isGirlsOrSeven || isAppreciationDay;
+```
+この条件は正しい（正規は含まない）。しかし `syncHalfOffOrders` は客種変更・イベントフラグ変更時にしか走らないため、初回生成時の `defaultIsHalfOff: true` がそのまま残る。
+
+### 8-3. 修正方針
+
+**`createPinnedOrders()` を客種対応にする:**
+
+`createPinnedOrders(config)` → `createPinnedOrders(config, customerType)` に変更し、  
+`defaultIsHalfOff` の適用を客種に基づく半額ルールと照合する。
+
+```typescript
+export function createPinnedOrders(config: StoreConfig, customerType: CustomerType = 'regular'): OrderItem[] {
+    const isGirlsOrSeven = false; // 初期状態ではイベントフラグは全てfalse
+    const isAppreciationDay = false;
+    const shouldShotHalf = customerType === 'initial' || isGirlsOrSeven || isAppreciationDay;
+
+    return config.pinnedOrders.map((p, i) => {
+        const shotName = config.pinnedOrders[2]?.name ?? 'ショット系';
+        // ショット系の半額はshouldShotHalfに従う、それ以外はdefaultIsHalfOffに従う
+        const isHalf = (p.name === shotName)
+            ? (p.defaultIsHalfOff && shouldShotHalf)
+            : (p.defaultIsHalfOff ?? false);
+        // ... 以下同じ
+    });
+}
+```
+
+### 8-4. 半額ルール整理（正しい仕様）
+
+| 客種 | カン半額 | ショット半額 | シャンパン半額 |
+|------|---------|------------|-------------|
+| 新規 (initial) | x | **o** | 1本のみ |
+| R チケ有 (r_within) | x | x | 1本のみ |
+| R チケ無 (r_after) | x | x | 1本のみ |
+| 正規 (regular) | x | **x** | x |
+| 女子会 / セブンラック | **o** | **o** | Blue〜Gold全て |
+| 感謝DAY | **o** | **o** | x |
+
+### 8-5. 影響範囲
+- `src/data/defaultStoreConfig.ts` — `defaultIsHalfOff` の扱いは変更なし（設定値として残す）
+- `src/hooks/useCalculator.ts` — `createPinnedOrders` / `createInitialState` を修正
+- 既存のlocalStorage保存データへの影響なし（設定構造は変わらない）
+
+---
+
+## 9. 非機能要件
 
 - モバイルファースト（主にスマホで使用）
 - タブ切替・ウィザード遷移は 300ms 以内のレスポンス
