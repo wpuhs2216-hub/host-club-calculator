@@ -57,9 +57,15 @@ export interface CalculationResult {
 }
 
 // configからピン留めオーダーを生成
-export function createPinnedOrders(config: StoreConfig): OrderItem[] {
+export function createPinnedOrders(config: StoreConfig, customerType: CustomerType = 'regular'): OrderItem[] {
+    // ショット半額は新規のみ（イベントフラグは作成時には考慮しない）
+    const shouldShotHalf = customerType === 'initial';
+    const shotName = config.pinnedOrders[2]?.name ?? 'ショット系';
+
     return config.pinnedOrders.map((p, i) => {
-        const isHalf = p.defaultIsHalfOff ?? false;
+        const isHalf = (p.name === shotName && p.canHalfOff)
+            ? (p.defaultIsHalfOff === true && shouldShotHalf)
+            : (p.defaultIsHalfOff ?? false);
         const effectivePrice = isHalf ? calcHalfOffPrice(p.name, p.price, config) : p.price;
         return {
             id: `pinned_${i}`,
@@ -90,7 +96,7 @@ export function createInitialState(config: StoreConfig): CalculatorState {
         isGoldTicket: false,
         additionalNominationCount: 0,
         isDebugMode: false,
-        orders: createPinnedOrders(config),
+        orders: createPinnedOrders(config, 'regular'),
     };
 }
 

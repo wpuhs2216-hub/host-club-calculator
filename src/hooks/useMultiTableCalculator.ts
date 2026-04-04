@@ -1,8 +1,9 @@
 import { useReducer, useMemo, useRef, useCallback, useEffect } from 'react';
-import { calculatorReducer, calculateResult, createInitialState } from './useCalculator';
+import { calculatorReducer, calculateResult, createInitialState, createPinnedOrders } from './useCalculator';
 import type { CalculatorState, Action } from './useCalculator';
 import type { StoreConfig } from '../types/storeConfig';
 import { useStoreConfig } from '../contexts/StoreConfigContext';
+import type { SlipTab } from '../components/SlipTabView';
 
 const SLIP_NAMES = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
 
@@ -10,6 +11,9 @@ export type SlipInfo = {
     id: string;
     name: string;
     state: CalculatorState;
+    isWizardActive: boolean;
+    wizardStep: number;
+    activeTab: SlipTab;
 };
 
 export type TableInfo = {
@@ -40,10 +44,50 @@ function createInitialMultiState(config: StoreConfig): MultiTableState {
     };
 }
 
+// コピー時のフィールド適用
+function applySelectiveFields(
+    base: CalculatorState,
+    source: CalculatorState,
+    fields: string[],
+): CalculatorState {
+    let result = { ...base };
+    for (const field of fields) {
+        switch (field) {
+            case 'customerType':
+                result.customerType = source.customerType;
+                result.initialSetPrice = source.initialSetPrice;
+                break;
+            case 'entryTime':
+                result.entryTime = source.entryTime;
+                break;
+            case 'dohan':
+                result.dohan = source.dohan;
+                break;
+            case 'events':
+                result.isGirlsParty = source.isGirlsParty;
+                result.isAppreciationDay = source.isAppreciationDay;
+                result.isSevenLuck = source.isSevenLuck;
+                result.isGoldTicket = source.isGoldTicket;
+                break;
+            case 'setHalfOff':
+                result.isSetHalfOff = source.isSetHalfOff;
+                break;
+            case 'nomination':
+                result.additionalNominationCount = source.additionalNominationCount;
+                break;
+            case 'orders':
+                result.orders = source.orders.map(o => ({ ...o }));
+                break;
+        }
+    }
+    return result;
+}
+
 export type MultiAction =
     | { type: 'SET_ACTIVE_TABLE'; payload: string }
     | { type: 'SET_ACTIVE_SLIP'; payload: string | null }
     | { type: 'ADD_SLIP'; payload?: { tableId?: string } }
+    | { type: 'ADD_SLIP_FROM_COPY'; payload: { sourceSlipId: string; mode: 'full' | 'selective'; selectedFields?: string[]; tableId?: string } }
     | { type: 'REMOVE_SLIP'; payload: { tableId: string; slipId: string } }
     | { type: 'RENAME_SLIP'; payload: { tableId: string; slipId: string; name: string } }
     | { type: 'SLIP_ACTION'; payload: Action }
@@ -51,7 +95,18 @@ export type MultiAction =
     | { type: 'MOVE_SLIP'; payload: { fromTableId: string; slipId: string; toTableId: string } }
     | { type: 'UPDATE_ALL_CURRENT_TIME'; payload: string }
     | { type: 'CLEAR_ALL_SLIPS' }
+    | { type: 'SET_WIZARD_STEP'; payload: number }
+    | { type: 'COMPLETE_WIZARD' }
+    | { type: 'SET_ACTIVE_TAB'; payload: SlipTab }
     | { type: 'REINIT'; payload: { config: StoreConfig } };
+
+function findSlipAcrossTables(tables: TableInfo[], slipId: string): { slip: SlipInfo; tableId: string } | null {
+    for (const table of tables) {
+        const slip = table.slips.find(s => s.id === slipId);
+        if (slip) return { slip, tableId: table.id };
+    }
+    return null;
+}
 
 function multiReducer(state: MultiTableState, action: MultiAction, config: StoreConfig): MultiTableState {
     switch (action.type) {
@@ -70,6 +125,49 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
                         id: newSlipId,
                         name: nextSlipName(t.slips),
                         state: createInitialState(config),
+                        isWizardActive: true,
+                        wizardStep: 1,
+                        activeTab: 'checkout',
+                    };
+                    return { ...t, slips: [...t.slips, newSlip] };
+                }
+                return t;
+            });
+            return { ...state, tables: newTables, activeSlipId: newSlipId };
+        }
+        case 'ADD_SLIP_FROM_COPY': {
+            const { sourceSlipId, mode, selectedFields, tableId: targetTableId } = action.payload;
+            const found = findSlipAcrossTables(state.tables, sourceSlipId);
+            if (!found) return state;
+
+            const newSlipId = Date.now().toString();
+            const tId = targetTableId ?? state.activeTableId;
+
+            let newState: CalculatorState;
+            if (mode === 'full') {
+                newState = {
+                    ...found.slip.state,
+                    orders: found.slip.state.orders.map(o => ({ ...o })),
+                    currentTime: found.slip.state.currentTime, // keep current time from source
+                };
+            } else {
+                const base = createInitialState(config);
+                newState = applySelectiveFields(base, found.slip.state, selectedFields ?? []);
+                // If customerType was copied, recreate pinned orders with correct half-off
+                if (selectedFields?.includes('customerType') && !selectedFields?.includes('orders')) {
+                    newState.orders = createPinnedOrders(config, newState.customerType);
+                }
+            }
+
+            const newTables = state.tables.map(t => {
+                if (t.id === tId) {
+                    const newSlip: SlipInfo = {
+                        id: newSlipId,
+                        name: nextSlipName(t.slips),
+                        state: newState,
+                        isWizardActive: false, // コピーはウィザードなし
+                        wizardStep: 1,
+                        activeTab: 'checkout',
                     };
                     return { ...t, slips: [...t.slips, newSlip] };
                 }
@@ -146,6 +244,36 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
                 tables: state.tables.map(t => ({ ...t, slips: [] })),
                 activeSlipId: null,
             };
+        case 'SET_WIZARD_STEP': {
+            if (!state.activeSlipId) return state;
+            return {
+                ...state,
+                tables: state.tables.map(t => t.id === state.activeTableId
+                    ? { ...t, slips: t.slips.map(s => s.id === state.activeSlipId ? { ...s, wizardStep: action.payload } : s) }
+                    : t
+                )
+            };
+        }
+        case 'COMPLETE_WIZARD': {
+            if (!state.activeSlipId) return state;
+            return {
+                ...state,
+                tables: state.tables.map(t => t.id === state.activeTableId
+                    ? { ...t, slips: t.slips.map(s => s.id === state.activeSlipId ? { ...s, isWizardActive: false, activeTab: 'checkout' } : s) }
+                    : t
+                )
+            };
+        }
+        case 'SET_ACTIVE_TAB': {
+            if (!state.activeSlipId) return state;
+            return {
+                ...state,
+                tables: state.tables.map(t => t.id === state.activeTableId
+                    ? { ...t, slips: t.slips.map(s => s.id === state.activeSlipId ? { ...s, activeTab: action.payload } : s) }
+                    : t
+                )
+            };
+        }
         case 'REINIT':
             return createInitialMultiState(action.payload.config);
         default:
@@ -205,8 +333,13 @@ export function useMultiTableCalculator() {
         setActiveTable: (id: string) => multiDispatch({ type: 'SET_ACTIVE_TABLE', payload: id }),
         setActiveSlip: (id: string | null) => multiDispatch({ type: 'SET_ACTIVE_SLIP', payload: id }),
         addSlip: (tableId?: string) => multiDispatch({ type: 'ADD_SLIP', payload: tableId ? { tableId } : undefined }),
+        addSlipFromCopy: (sourceSlipId: string, mode: 'full' | 'selective', selectedFields?: string[]) =>
+            multiDispatch({ type: 'ADD_SLIP_FROM_COPY', payload: { sourceSlipId, mode, selectedFields } }),
         removeSlip: (tableId: string, slipId: string) => multiDispatch({ type: 'REMOVE_SLIP', payload: { tableId, slipId } }),
         renameSlip: (tableId: string, slipId: string, name: string) => multiDispatch({ type: 'RENAME_SLIP', payload: { tableId, slipId, name } }),
+        setWizardStep: (step: number) => multiDispatch({ type: 'SET_WIZARD_STEP', payload: step }),
+        completeWizard: () => multiDispatch({ type: 'COMPLETE_WIZARD' }),
+        setActiveTab: (tab: SlipTab) => multiDispatch({ type: 'SET_ACTIVE_TAB', payload: tab }),
         multiDispatch,
     };
 }

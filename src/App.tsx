@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
-import type { CustomerType, Action } from './hooks/useCalculator';
+import type { Action } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
-import { InputGroup } from './components/InputGroup';
-import { OrderSection } from './components/OrderSection';
-import { ResultDisplay } from './components/ResultDisplay';
-import { BudgetRecommender } from './components/BudgetRecommender';
-import { Collapsible } from './components/Collapsible';
+import { SlipWizard } from './components/SlipWizard';
+import { SlipTabView } from './components/SlipTabView';
+import { SlipCopyModal } from './components/SlipCopyModal';
+import type { SlipInfo as CopySlipInfo } from './components/SlipCopyModal';
 import { LOPage } from './components/LOPage';
 import { SettingsPage } from './components/SettingsPage';
 import { UpdateNotice } from './components/UpdateNotice';
@@ -26,7 +25,8 @@ const updateSW = registerSW({
 function App() {
   const {
     tables, activeTableId, activeSlipId, activeTable, activeSlip, state, result, dispatch,
-    setActiveTable, setActiveSlip, addSlip, removeSlip, renameSlip, multiDispatch
+    setActiveTable, setActiveSlip, addSlip, addSlipFromCopy, removeSlip, renameSlip,
+    setWizardStep, completeWizard, setActiveTab, multiDispatch
   } = useMultiTableCalculator();
   const { config } = useStoreConfig();
 
@@ -36,6 +36,9 @@ function App() {
       return localStorage.getItem('app-version') !== APP_VERSION;
     } catch { return false; }
   });
+
+  // コピーモーダル
+  const [showCopyModal, setShowCopyModal] = useState(false);
 
   // UI設定の永続化
   const loadUISetting = (key: string, fallback: boolean) => {
@@ -85,6 +88,32 @@ function App() {
     dispatch({ type: 'ADD_ORDER', payload: { name, price, isTaxIncluded, canHalfOff, isHalfOff } });
   };
 
+  // コピー用のスリップ情報を構築
+  const buildCopySlips = (): CopySlipInfo[] => {
+    if (showLO) {
+      // LOモード: 全テーブルの全伝票
+      return tables.flatMap(t =>
+        t.slips.map(s => ({
+          id: s.id,
+          name: s.name,
+          tableId: t.id,
+          tableName: t.name,
+          state: s.state,
+        }))
+      );
+    }
+    // 通常モード: アクティブテーブルの伝票
+    return activeTable.slips.map(s => ({
+      id: s.id,
+      name: s.name,
+      state: s.state,
+    }));
+  };
+
+  const handleCopy = (sourceSlipId: string, mode: 'full' | 'selective', selectedFields?: string[]) => {
+    addSlipFromCopy(sourceSlipId, mode, selectedFields);
+    setShowCopyModal(false);
+  };
 
   // LOページ用dispatch
   const dispatchForSlip = (tableId: string, slipId: string, action: Action) => {
@@ -163,7 +192,12 @@ function App() {
                 ))}
                 <button onClick={() => addSlip()}
                   className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer"
-                >+ 伝票を追加</button>
+                >+ 伝票追加</button>
+                {activeTable.slips.length > 0 && (
+                  <button onClick={() => setShowCopyModal(true)}
+                    className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--accent-color)] text-[var(--accent-color)] hover:bg-[rgba(0,188,212,0.1)] transition-colors text-sm font-bold cursor-pointer"
+                  >コピーして追加</button>
+                )}
               </div>
             </div>
           )}
@@ -181,12 +215,17 @@ function App() {
                 <button onClick={() => addSlip()}
                   className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer"
                 >+ 伝票追加</button>
+                {activeTable.slips.length > 0 && (
+                  <button onClick={() => setShowCopyModal(true)}
+                    className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--accent-color)] text-[var(--accent-color)] hover:bg-[rgba(0,188,212,0.1)] transition-colors text-sm font-bold cursor-pointer"
+                  >コピーして追加</button>
+                )}
               </div>
             </div>
           )}
 
           {/* 伝票が選択されている場合のみ表示 */}
-          {state && result ? (
+          {state && result && activeSlip ? (
             <>
               {/* ヘッダー: 伝票名(リネーム可) + 削除 + 全伝票削除 */}
               <div className="flex justify-between items-center">
@@ -200,12 +239,10 @@ function App() {
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  {activeSlip && (
-                    <button
-                      onClick={() => { if (window.confirm('この伝票を削除しますか？')) removeSlip(activeTableId, activeSlip.id); }}
-                      className="px-3 py-1.5 rounded-lg border border-[var(--danger-color)] text-[var(--danger-color)] font-bold text-xs hover:bg-[var(--danger-color)] hover:text-white transition-all outline-none cursor-pointer bg-transparent"
-                    >削除</button>
-                  )}
+                  <button
+                    onClick={() => { if (window.confirm('この伝票を削除しますか？')) removeSlip(activeTableId, activeSlip.id); }}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--danger-color)] text-[var(--danger-color)] font-bold text-xs hover:bg-[var(--danger-color)] hover:text-white transition-all outline-none cursor-pointer bg-transparent"
+                  >削除</button>
                   <button
                     onClick={() => {
                       if (window.confirm('全ての伝票を削除しますか？')) {
@@ -217,86 +254,43 @@ function App() {
                 </div>
               </div>
 
-              <Collapsible title="≡ 基本情報" defaultOpen={false}>
-                <InputGroup
-                  customerType={state.customerType}
-                  initialSetPrice={state.initialSetPrice}
-                  entryTime={state.entryTime}
-                  dohan={state.dohan}
-                  isSetHalfOff={state.isSetHalfOff}
-                  isGirlsParty={state.isGirlsParty}
-                  isAppreciationDay={state.isAppreciationDay}
-                  isSevenLuck={state.isSevenLuck}
-                  isGoldTicket={state.isGoldTicket}
-                  additionalNominationCount={state.additionalNominationCount}
-                  onCustomerTypeChange={(type: CustomerType) => dispatch({ type: 'SET_CUSTOMER_TYPE', payload: type })}
-                  onInitialSetPriceChange={(price) => dispatch({ type: 'SET_INITIAL_SET_PRICE', payload: price })}
-                  onEntryTimeChange={(time) => dispatch({ type: 'SET_ENTRY_TIME', payload: time })}
-                  onDohanToggle={() => dispatch({ type: 'TOGGLE_DOHAN' })}
-                  onSetHalfOffToggle={() => dispatch({ type: 'TOGGLE_SET_HALF_OFF' })}
-                  onGirlsPartyToggle={() => dispatch({ type: 'TOGGLE_GIRLS_PARTY' })}
-                  onAppreciationDayToggle={() => dispatch({ type: 'TOGGLE_APPRECIATION_DAY' })}
-                  onSevenLuckToggle={() => dispatch({ type: 'TOGGLE_SEVEN_LUCK' })}
-                  onGoldTicketToggle={() => dispatch({ type: 'TOGGLE_GOLD_TICKET' })}
-                  onAdditionalNominationCountChange={(count) => dispatch({ type: 'SET_ADDITIONAL_NOMINATION_COUNT', payload: count })}
-                />
-              </Collapsible>
-
-              <Collapsible title="◇ 商品オーダー" defaultOpen={false}>
-                <OrderSection
-                  orders={state.orders}
-                  customerType={state.customerType}
-                  onAdd={handleAddOrder}
-                  onUpdateCount={(id, delta) => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id, delta } })}
-                  onSetCount={(id, count) => dispatch({ type: 'SET_ORDER_COUNT', payload: { id, count } })}
-                  onToggleHalfOff={(id) => dispatch({ type: 'TOGGLE_ORDER_HALF_OFF', payload: id })}
-                  onRemove={(id) => dispatch({ type: 'REMOVE_ORDER', payload: id })}
-                  isGirlsParty={state.isGirlsParty}
-                  isAppreciationDay={state.isAppreciationDay}
-                  isSevenLuck={state.isSevenLuck}
-                />
-              </Collapsible>
-
-              <Collapsible title="⟡ AI予算プランナー" defaultOpen={false}>
-                <BudgetRecommender
-                  result={result}
+              {/* ウィザードモード or タブモード */}
+              {activeSlip.isWizardActive ? (
+                <SlipWizard
                   state={state}
-                  showDetail={showAIDetail}
-                  onAddOrders={(items) => {
-                    items.forEach(item => {
-                      dispatch({
-                        type: 'ADD_ORDER',
-                        payload: { name: item.name, price: item.price, isTaxIncluded: item.isTaxIncluded, canHalfOff: item.canHalfOff, isHalfOff: item.isHalfOff }
-                      });
-                    });
-                  }}
+                  dispatch={dispatch}
+                  wizardStep={activeSlip.wizardStep}
+                  onStepChange={setWizardStep}
+                  onComplete={completeWizard}
+                  config={config}
+                  onAddOrder={handleAddOrder}
                 />
-              </Collapsible>
-
-              <ResultDisplay
-                currentTotal={result.currentTotal}
-                breakdown={result.breakdown}
-                previousTotal={result.previousTotal}
-                previousBreakdown={result.previousBreakdown}
-                schedule={result.schedule}
-                taxRate={result.taxRate}
-                currentTime={state.currentTime}
-                isOutOfHours={result.isOutOfHours}
-                onTimeOverride={(time) => {
-                  if (time) {
-                    timeOverrideRef.current = true;
-                    dispatch({ type: 'SET_CURRENT_TIME', payload: time });
-                  } else {
-                    timeOverrideRef.current = false;
-                  }
-                }}
-              />
+              ) : (
+                <SlipTabView
+                  state={state}
+                  result={result}
+                  dispatch={dispatch}
+                  activeTab={activeSlip.activeTab}
+                  onTabChange={setActiveTab}
+                  showAIDetail={showAIDetail}
+                  config={config}
+                  onTimeOverride={(time) => {
+                    if (time) {
+                      timeOverrideRef.current = true;
+                      dispatch({ type: 'SET_CURRENT_TIME', payload: time });
+                    } else {
+                      timeOverrideRef.current = false;
+                    }
+                  }}
+                  onAddOrder={handleAddOrder}
+                />
+              )}
             </>
           ) : (
             <div className="text-center py-12 text-gray-500">
               <div className="text-4xl mb-4">◎</div>
               <div className="text-lg mb-2">テーブル <span className="text-[var(--gold-color)] font-bold">{activeTable.name}</span></div>
-              <div className="text-sm">「+ 伝票を追加」で伝票入力を開始</div>
+              <div className="text-sm">「+ 伝票追加」で伝票入力を開始</div>
             </div>
           )}
         </div>
@@ -322,6 +316,14 @@ function App() {
           onShowAIDetailChange={persistAIDetail}
         />
       )}
+
+      {/* コピーモーダル */}
+      <SlipCopyModal
+        isOpen={showCopyModal}
+        onClose={() => setShowCopyModal(false)}
+        onCopy={handleCopy}
+        availableSlips={buildCopySlips()}
+      />
 
       {/* アップデート通知モーダル */}
       {showUpdateNotice && (
