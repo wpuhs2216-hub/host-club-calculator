@@ -278,9 +278,6 @@ function App() {
                       className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer whitespace-nowrap shrink-0"
                     >+</button>
                   )}
-                  {showLO && (
-                    <span className="text-xs text-gray-400 shrink-0 font-bold">{activeTable.name}</span>
-                  )}
                 </div>
               )}
 
@@ -336,9 +333,7 @@ function App() {
                       if (tableId) setActiveTable(tableId);
                       addSlipWithData(slipData, tableId);
                     }}
-                    tables={showLO ? tables.map(t => ({ id: t.id, name: t.name })) : undefined}
                     activeTableId={activeTableId}
-                    tableName={showLO ? activeTable.name : undefined}
                   />
                 </div>
               )}

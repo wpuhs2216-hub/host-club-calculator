@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.5.2';
+export const APP_VERSION = '1.5.3';
 
 export type VersionEntry = {
   version: string;
@@ -7,9 +7,11 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
-    version: '1.5.2',
+    version: '1.5.3',
     notes: [
       '伝票0件時にインライン伝票作成フォームを直接表示（ダイアログ不要）',
+      'インライン作成時のテーブル選択・テーブル名表示を削除（現在のテーブルに直接作成）',
+      'モバイル伝票セレクターのテーブル名ラベルを削除',
       'サイドバーのテーブル選択でサイドバーを閉じて該当テーブルを表示',
       '伝票0件時の「+」追加ボタンを非表示に変更',
     ],
