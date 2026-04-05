@@ -54,7 +54,7 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
           const isActive = activeTab === tab.id;
           // オーダータブにバッジ表示
           const badge = tab.id === 'orders'
-            ? state.orders.filter(o => !o.isPinned && o.count > 0).length
+            ? state.orders.filter(o => o.count > 0).length
             : 0;
           return (
             <button
@@ -145,7 +145,11 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
                     );
                   })()}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id: order.id, delta: -5 } })}
+                    className="w-7 h-7 rounded-md border border-[var(--border-color)] bg-transparent text-gray-400 text-xs flex items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
+                  >-5</button>
                   <button
                     onClick={() => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id: order.id, delta: -1 } })}
                     className="w-8 h-8 rounded-full border border-[var(--border-color)] bg-transparent text-white flex items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
@@ -165,10 +169,14 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
                     onClick={() => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id: order.id, delta: 1 } })}
                     className="w-8 h-8 rounded-full border-none bg-[var(--gold-color)] text-black flex items-center justify-center cursor-pointer hover:bg-[var(--accent-hover)] transition-colors"
                   >+</button>
+                  <button
+                    onClick={() => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id: order.id, delta: 5 } })}
+                    className="w-7 h-7 rounded-md border-none bg-[var(--gold-color)] text-black text-xs flex items-center justify-center cursor-pointer hover:bg-[var(--accent-hover)] transition-colors"
+                  >+5</button>
                   {!order.isPinned && (
                     <button
                       onClick={() => dispatch({ type: 'REMOVE_ORDER', payload: order.id })}
-                      className="ml-2 text-xs border-none bg-transparent underline cursor-pointer text-[var(--danger-color)] hover:text-red-300"
+                      className="ml-1 text-xs border-none bg-transparent underline cursor-pointer text-[var(--danger-color)] hover:text-red-300"
                     >
                       削除
                     </button>

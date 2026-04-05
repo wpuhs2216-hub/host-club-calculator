@@ -142,7 +142,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <ToggleRow label="AI予算プランナーの詳細表示" checked={showAIDetail} onChange={onShowAIDetailChange} />
                                 {showLO && onLoDisplayModeChange && (
                                     <div className="mt-2">
-                                        <label className="block mb-2 text-sm text-gray-400">LO一覧の表示方法</label>
+                                        <label className="block mb-2 text-sm text-gray-400">全卓会計の表示方法</label>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => onLoDisplayModeChange('sidebar')}

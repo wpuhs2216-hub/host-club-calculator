@@ -181,12 +181,13 @@ function App() {
           )}
         </div>
 
-        {/* LO一覧（サイドバーモード時） — LOPageをそのまま埋め込み */}
+        {/* 全卓会計（サイドバーモード時） */}
         {showLO && loDisplayMode === 'sidebar' && (
           <div className="border-t border-[var(--border-color)] pt-3 mt-1">
             <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip}
               onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })}
-              onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })} />
+              onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })}
+              onOpenSlip={(tableId, slipId) => { setActiveTable(tableId); setActiveSlip(slipId); setCurrentPage('calculator'); setShowMobileSidebar(false); }} />
           </div>
         )}
       </div>
@@ -240,7 +241,7 @@ function App() {
             className={`flex-1 py-2.5 text-sm font-bold transition-colors border-none cursor-pointer outline-none ${
               currentPage === 'lo' ? 'bg-[var(--gold-color)] text-black' : 'bg-[var(--input-bg)] text-white hover:bg-[#444]'
             }`}
-          >LO</button>
+          >全卓会計</button>
         </div>
       )}
 
@@ -344,7 +345,8 @@ function App() {
           {currentPage === 'lo' && (
             <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip}
               onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })}
-              onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })} />
+              onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })}
+              onOpenSlip={(tableId, slipId) => { setActiveTable(tableId); setActiveSlip(slipId); setCurrentPage('calculator'); setShowMobileSidebar(false); }} />
           )}
 
           {/* 設定ページ */}

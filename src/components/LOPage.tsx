@@ -10,6 +10,7 @@ interface LOPageProps {
     dispatchForSlip: (tableId: string, slipId: string, action: Action) => void;
     onMoveSlip?: (fromTableId: string, slipId: string, toTableId: string) => void;
     onClearAllSlips?: () => void;
+    onOpenSlip?: (tableId: string, slipId: string) => void;
 }
 
 const CUSTOMER_TYPE_LABELS: Record<CustomerType, string> = {
@@ -27,7 +28,7 @@ function isNearClosing(): boolean {
     return (h === 23 && m >= 45) || (h >= 0 && h < 6);
 }
 
-export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip, onMoveSlip, onClearAllSlips }) => {
+export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip, onMoveSlip, onClearAllSlips, onOpenSlip }) => {
     const [editingKey, setEditingKey] = useState<string | null>(null);
     const [movingSlipKey, setMovingSlipKey] = useState<string | null>(null);
     // 伝票ごとの表示モード（現在 or ラストまで）
@@ -36,12 +37,19 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
     const defaultMode = isNearClosing() ? 'closing' : 'current';
     const hasAnySlips = tables.some(t => t.slips.length > 0);
 
+    // 伝票ありテーブルを上にソート
+    const sortedTables = [...tables].sort((a, b) => {
+        if (a.slips.length > 0 && b.slips.length === 0) return -1;
+        if (a.slips.length === 0 && b.slips.length > 0) return 1;
+        return 0;
+    });
+
     return (
         <div className="flex flex-col gap-4">
-            {/* ヘッダー (outside grid) */}
+            {/* ヘッダー */}
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-[var(--gold-color)] flex items-center gap-2">
-                    ◆ LO（ラストオーダー一覧）
+                    ◆ 全卓会計
                 </h2>
                 {hasAnySlips && onClearAllSlips && (
                     <button
@@ -52,7 +60,7 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
             </div>
 
             <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
-            {tables.map(table => (
+            {sortedTables.map(table => (
                 <div key={table.id} className="rounded-xl border border-[var(--border-color)] overflow-hidden bg-[var(--card-bg)]">
                     {/* テーブルヘッダー */}
                     <div className="px-4 py-3 border-b border-[var(--border-color)] bg-gradient-to-r from-[rgba(255,215,0,0.1)] to-transparent">
@@ -107,6 +115,12 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
                                         </div>
                                     </div>
                                     <div className="flex gap-2 mt-2">
+                                        {onOpenSlip && (
+                                            <button
+                                                onClick={() => onOpenSlip(table.id, slip.id)}
+                                                className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer bg-transparent text-green-400 border-green-400 hover:bg-[rgba(74,222,128,0.1)]"
+                                            >◎ 開く</button>
+                                        )}
                                         <button
                                             onClick={() => setEditingKey(isEditing ? null : editKey)}
                                             className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
