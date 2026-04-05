@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.5.3';
+export const APP_VERSION = '1.5.4';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,13 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.5.4',
+    notes: [
+      'サイドバーでテーブル変更後に伝票が別テーブルに作成される問題を修正',
+      'スワイプジェスチャーでサイドバーの開閉に対応',
+    ],
+  },
   {
     version: '1.5.3',
     notes: [

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
 import type { Action } from './hooks/useCalculator';
@@ -33,6 +33,33 @@ function useIsTablet() {
   return isTablet;
 }
 
+function useSwipeSidebar(isTablet: boolean, showMobileSidebar: boolean, setShowMobileSidebar: (v: boolean) => void) {
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (isTablet) return;
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }, [isTablet]);
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    if (isTablet || !touchStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    touchStart.current = null;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx > 0 && !showMobileSidebar) setShowMobileSidebar(true);
+    if (dx < 0 && showMobileSidebar) setShowMobileSidebar(false);
+  }, [isTablet, showMobileSidebar, setShowMobileSidebar]);
+  useEffect(() => {
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchEnd]);
+}
+
 function App() {
   const {
     tables, activeTableId, activeSlipId, activeTable, activeSlip, state, result, dispatch,
@@ -52,6 +79,9 @@ function App() {
   const [showNewSlipDialog, setShowNewSlipDialog] = useState(false);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
+  // スワイプでサイドバー開閉
+  useSwipeSidebar(isTablet, showMobileSidebar, setShowMobileSidebar);
 
   // UI設定の永続化
   const loadUISetting = (key: string, fallback: string) => {

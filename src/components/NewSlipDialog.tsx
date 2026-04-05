@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CustomerType } from '../hooks/useCalculator';
 
 type MainCategory = 'initial' | 'r' | 'regular';
@@ -72,6 +72,11 @@ const NewSlipForm: React.FC<NewSlipInlineProps> = ({ onCreate, tables, activeTab
   const [initialSetPrice, setInitialSetPrice] = useState(0);
   const [dohan, setDohan] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState<string | undefined>(activeTableId);
+
+  // activeTableIdが変わったら同期
+  useEffect(() => {
+    setSelectedTableId(activeTableId);
+  }, [activeTableId]);
 
   // Time state
   const [timeStep, setTimeStep] = useState<TimeStep>('hour');
