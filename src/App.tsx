@@ -269,7 +269,7 @@ function App() {
       <div className={sidebarVisible ? 'flex gap-4' : ''}>
         {/* 固定サイドバー（LO埋め込み時は幅広） */}
         {sidebarVisible && (
-          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[min(420px,40vw)]' : 'w-[min(240px,30vw)]'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
+          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[min(420px,40vw)]' : 'w-[min(240px,30vw)]'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-y-auto self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
             {sidebarContent}
           </div>
         )}
