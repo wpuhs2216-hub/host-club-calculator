@@ -198,6 +198,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                             placeholder="金額（円）"
                             value={customPrice}
                             onChange={(e) => setCustomPrice(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             className="w-full p-3 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] text-base outline-none focus:border-[var(--gold-color)] transition-colors"
                         />
                     </div>
@@ -295,6 +296,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                                             if (!isNaN(val) && val >= 0) onSetCount(order.id, val);
                                             else if (e.target.value === '') onSetCount(order.id, 0);
                                         }}
+                                        onFocus={(e) => e.target.select()}
                                         className="w-10 text-center font-bold bg-transparent border-none border-b border-b-[var(--border-color)] outline-none text-white text-sm hide-spin-button"
                                     />
                                 ) : (

@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.4.0';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,14 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.4.0',
+    notes: [
+      '商品オーダーをダイアログ化（タブから独立モーダルに）',
+      'テーブル/伝票選択を左サイドバーに格納',
+      '伝票名・本数入力のフォーカス時に全選択（即上書き可能）',
+    ],
+  },
   {
     version: '1.3.0',
     notes: [

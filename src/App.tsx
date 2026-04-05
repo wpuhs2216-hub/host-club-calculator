@@ -5,6 +5,7 @@ import type { Action } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
 import { NewSlipDialog } from './components/NewSlipDialog';
 import { SlipTabView } from './components/SlipTabView';
+import { OrderDialog } from './components/OrderDialog';
 import { SlipCopyModal } from './components/SlipCopyModal';
 import type { SlipInfo as CopySlipInfo } from './components/SlipCopyModal';
 import { LOPage } from './components/LOPage';
@@ -40,6 +41,8 @@ function App() {
   // モーダル
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [showNewSlipDialog, setShowNewSlipDialog] = useState(false);
+  const [showOrderDialog, setShowOrderDialog] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   // UI設定の永続化
   const loadUISetting = (key: string, fallback: boolean) => {
@@ -157,73 +160,93 @@ function App() {
         </div>
       )}
 
+      {/* 左サイドバー（テーブル/伝票選択） */}
+      {showSidebar && currentPage === 'calculator' && (
+        <div className="fixed inset-0 z-[900] flex">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowSidebar(false)} />
+          <div className="relative w-72 max-w-[80vw] h-full bg-[var(--card-bg,#111827)] border-r border-[var(--border-color)] shadow-2xl flex flex-col animate-slide-in-left overflow-y-auto">
+            {/* サイドバーヘッダー */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0">
+              <span className="text-sm font-bold text-[var(--gold-color)]">
+                {showLO ? 'テーブル / 伝票' : '伝票'}
+              </span>
+              <button onClick={() => setShowSidebar(false)}
+                className="w-8 h-8 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] flex items-center justify-center text-sm cursor-pointer hover:border-[var(--gold-color)] transition-colors">✕</button>
+            </div>
+
+            <div className="p-4 flex flex-col gap-4">
+              {/* テーブル選択（LOモード時のみ） */}
+              {showLO && (
+                <>
+                  <label className="text-xs text-gray-400 block">テーブル</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {tables.map(table => {
+                      const isActive = activeTableId === table.id;
+                      const hasSlips = table.slips.length > 0;
+                      return (
+                        <button key={table.id} onClick={() => setActiveTable(table.id)}
+                          className={`p-2.5 rounded-lg border text-center transition-colors ${
+                            isActive
+                              ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                              : hasSlips
+                                ? 'bg-transparent text-white border-[var(--accent-color)] hover:border-[var(--gold-color)]'
+                                : 'bg-transparent text-gray-500 border-[var(--border-color)] hover:border-gray-400'
+                          }`}>
+                          <div className="text-sm font-bold">{table.name}</div>
+                          {hasSlips && <div className={`text-xs mt-0.5 ${isActive ? 'text-black/60' : 'text-gray-400'}`}>{table.slips.length}伝票</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* 伝票一覧 */}
+              <label className="text-xs text-gray-400 block">伝票</label>
+              <div className="flex flex-col gap-2">
+                {activeTable.slips.map(slip => (
+                  <button key={slip.id} onClick={() => { setActiveSlip(slip.id); setShowSidebar(false); }}
+                    className={`px-3 py-2 rounded-lg border text-sm font-bold transition-colors text-left ${
+                      activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
+                    }`}>{showLO && <span className="text-xs opacity-60 mr-1">{activeTable.name}</span>}{slip.name}</button>
+                ))}
+                <button onClick={() => { setShowNewSlipDialog(true); setShowSidebar(false); }}
+                  className="px-3 py-2 rounded-lg bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer text-left"
+                >+ 伝票追加</button>
+                {activeTable.slips.length > 0 && (
+                  <button onClick={() => { setShowCopyModal(true); setShowSidebar(false); }}
+                    className="px-3 py-2 rounded-lg bg-transparent border border-dashed border-[var(--accent-color)] text-[var(--accent-color)] hover:bg-[rgba(0,188,212,0.1)] transition-colors text-sm font-bold cursor-pointer text-left"
+                  >コピーして追加</button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 計算ページ */}
       {currentPage === 'calculator' && (
         <div className="flex flex-col gap-4">
-          {/* 運営モード: テーブル3×3グリッド＋伝票選択 */}
-          {showLO && (
-            <div className="bg-[var(--input-bg)] p-4 rounded-xl border border-[var(--border-color)]">
-              <label className="text-xs text-gray-400 mb-2 block">テーブル</label>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                {tables.map(table => {
-                  const isActive = activeTableId === table.id;
-                  const hasSlips = table.slips.length > 0;
-                  return (
-                    <button key={table.id} onClick={() => setActiveTable(table.id)}
-                      className={`p-2.5 rounded-lg border text-center transition-colors ${
-                        isActive
-                          ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
-                          : hasSlips
-                            ? 'bg-transparent text-white border-[var(--accent-color)] hover:border-[var(--gold-color)]'
-                            : 'bg-transparent text-gray-500 border-[var(--border-color)] hover:border-gray-400'
-                      }`}>
-                      <div className="text-sm font-bold">{table.name}</div>
-                      {hasSlips && <div className={`text-xs mt-0.5 ${isActive ? 'text-black/60' : 'text-gray-400'}`}>{table.slips.length}伝票</div>}
-                    </button>
-                  );
-                })}
-              </div>
-              <label className="text-xs text-gray-400 mb-2 block">伝票</label>
-              <div className="flex gap-2 flex-wrap items-center">
-                {activeTable.slips.map(slip => (
-                  <button key={slip.id} onClick={() => setActiveSlip(slip.id)}
-                    className={`px-3 py-1.5 rounded-md border text-sm font-bold transition-colors ${
-                      activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
-                    }`}>{slip.name}</button>
-                ))}
-                <button onClick={() => setShowNewSlipDialog(true)}
-                  className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer"
-                >+ 伝票追加</button>
-                {activeTable.slips.length > 0 && (
-                  <button onClick={() => setShowCopyModal(true)}
-                    className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--accent-color)] text-[var(--accent-color)] hover:bg-[rgba(0,188,212,0.1)] transition-colors text-sm font-bold cursor-pointer"
-                  >コピーして追加</button>
-                )}
-              </div>
+          {/* 伝票セレクター（コンパクト: サイドバー開閉ボタン + アクティブ伝票表示） */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowSidebar(true)}
+              className="w-10 h-10 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] flex items-center justify-center text-lg cursor-pointer hover:border-[var(--gold-color)] transition-colors shrink-0"
+            >☰</button>
+            <div className="flex gap-2 flex-1 overflow-x-auto items-center" style={{ scrollbarWidth: 'none' }}>
+              {activeTable.slips.map(slip => (
+                <button key={slip.id} onClick={() => setActiveSlip(slip.id)}
+                  className={`px-3 py-1.5 rounded-md border text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${
+                    activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
+                  }`}>{slip.name}</button>
+              ))}
+              <button onClick={() => setShowNewSlipDialog(true)}
+                className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer whitespace-nowrap shrink-0"
+              >+</button>
             </div>
-          )}
-
-          {/* 通常モード: 伝票のみ（テーブル非表示、全てAに紐付け） */}
-          {!showLO && (
-            <div className="bg-[var(--input-bg)] p-3 rounded-xl border border-[var(--border-color)]">
-              <div className="flex gap-2 flex-wrap items-center">
-                {activeTable.slips.map(slip => (
-                  <button key={slip.id} onClick={() => setActiveSlip(slip.id)}
-                    className={`px-3 py-1.5 rounded-md border text-sm font-bold transition-colors ${
-                      activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
-                    }`}>{slip.name}</button>
-                ))}
-                <button onClick={() => setShowNewSlipDialog(true)}
-                  className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer"
-                >+ 伝票追加</button>
-                {activeTable.slips.length > 0 && (
-                  <button onClick={() => setShowCopyModal(true)}
-                    className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--accent-color)] text-[var(--accent-color)] hover:bg-[rgba(0,188,212,0.1)] transition-colors text-sm font-bold cursor-pointer"
-                  >コピーして追加</button>
-                )}
-              </div>
-            </div>
-          )}
+            {showLO && activeTable && (
+              <span className="text-xs text-gray-400 shrink-0 font-bold">{activeTable.name}</span>
+            )}
+          </div>
 
           {/* 伝票が選択されている場合のみ表示 */}
           {state && result && activeSlip ? (
@@ -236,6 +259,7 @@ function App() {
                     type="text"
                     value={activeSlip?.name ?? ''}
                     onChange={(e) => activeSlip && renameSlip(activeTableId, activeSlip.id, e.target.value)}
+                    onFocus={(e) => e.target.select()}
                     className="text-lg font-bold text-[var(--gold-color)] bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 outline-none w-24 focus:border-[var(--gold-color)] transition-colors"
                   />
                 </div>
@@ -271,7 +295,7 @@ function App() {
                     timeOverrideRef.current = false;
                   }
                 }}
-                onAddOrder={handleAddOrder}
+                onOpenOrderDialog={() => setShowOrderDialog(true)}
               />
             </>
           ) : (
@@ -302,6 +326,24 @@ function App() {
           onShowLOChange={persistShowLO}
           showAIDetail={showAIDetail}
           onShowAIDetailChange={persistAIDetail}
+        />
+      )}
+
+      {/* オーダーダイアログ */}
+      {state && (
+        <OrderDialog
+          isOpen={showOrderDialog}
+          onClose={() => setShowOrderDialog(false)}
+          orders={state.orders}
+          customerType={state.customerType}
+          onAdd={handleAddOrder}
+          onUpdateCount={(id, delta) => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id, delta } })}
+          onSetCount={(id, count) => dispatch({ type: 'SET_ORDER_COUNT', payload: { id, count } })}
+          onToggleHalfOff={(id) => dispatch({ type: 'TOGGLE_ORDER_HALF_OFF', payload: id })}
+          onRemove={(id) => dispatch({ type: 'REMOVE_ORDER', payload: id })}
+          isGirlsParty={state.isGirlsParty}
+          isAppreciationDay={state.isAppreciationDay}
+          isSevenLuck={state.isSevenLuck}
         />
       )}
 

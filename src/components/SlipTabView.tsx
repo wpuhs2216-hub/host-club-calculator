@@ -1,7 +1,6 @@
 import type { CustomerType, Action, CalculatorState, CalculationResult } from '../hooks/useCalculator';
 import type { StoreConfig } from '../types/storeConfig';
 import { InputGroup } from './InputGroup';
-import { OrderSection } from './OrderSection';
 import { ResultDisplay } from './ResultDisplay';
 import { BudgetRecommender } from './BudgetRecommender';
 
@@ -16,12 +15,11 @@ interface SlipTabViewProps {
   showAIDetail: boolean;
   config: StoreConfig;
   onTimeOverride: (time: string | null) => void;
-  onAddOrder: (name: string, price: number, isTaxIncluded?: boolean, canHalfOff?: boolean, isHalfOff?: boolean) => void;
+  onOpenOrderDialog: () => void;
 }
 
 const TABS: { id: SlipTab; label: string }[] = [
   { id: 'basic', label: '基本情報' },
-  { id: 'orders', label: 'オーダー' },
   { id: 'checkout', label: '会計' },
   { id: 'ai', label: '予算' },
 ];
@@ -34,18 +32,24 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
   onTabChange,
   showAIDetail,
   onTimeOverride,
-  onAddOrder,
+  onOpenOrderDialog,
 }) => {
+  // ordersタブが選ばれていた場合、basicにフォールバック
+  const effectiveTab = activeTab === 'orders' ? 'basic' : activeTab;
+
+  // 追加済みオーダー数
+  const orderCount = state.orders.filter(o => !o.isPinned && o.count > 0).length;
+
   return (
     <div>
-      {/* Tab bar */}
+      {/* Tab bar + オーダーボタン */}
       <div className="flex border-b border-[var(--border-color)] mb-4">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`flex-1 py-3 text-center text-sm font-bold transition-all ${
-              activeTab === tab.id
+              effectiveTab === tab.id
                 ? 'text-[var(--gold-color)] border-b-2 border-[var(--gold-color)]'
                 : 'text-gray-400 border-b-2 border-transparent hover:text-gray-200'
             }`}
@@ -53,10 +57,22 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
             {tab.label}
           </button>
         ))}
+        {/* オーダーボタン（タブバー内） */}
+        <button
+          onClick={onOpenOrderDialog}
+          className="flex-1 py-3 text-center text-sm font-bold transition-all text-[var(--gold-color)] border-b-2 border-transparent hover:border-[var(--gold-color)] flex items-center justify-center gap-1"
+        >
+          オーダー
+          {orderCount > 0 && (
+            <span className="text-xs bg-[var(--gold-color)] text-black px-1.5 py-0.5 rounded-full font-bold leading-none">
+              {orderCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Tab content */}
-      {activeTab === 'basic' && (
+      {effectiveTab === 'basic' && (
         <InputGroup
           customerType={state.customerType}
           initialSetPrice={state.initialSetPrice}
@@ -81,22 +97,7 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
         />
       )}
 
-      {activeTab === 'orders' && (
-        <OrderSection
-          orders={state.orders}
-          customerType={state.customerType}
-          onAdd={onAddOrder}
-          onUpdateCount={(id: string, delta: number) => dispatch({ type: 'UPDATE_ORDER_COUNT', payload: { id, delta } })}
-          onSetCount={(id: string, count: number) => dispatch({ type: 'SET_ORDER_COUNT', payload: { id, count } })}
-          onToggleHalfOff={(id: string) => dispatch({ type: 'TOGGLE_ORDER_HALF_OFF', payload: id })}
-          onRemove={(id: string) => dispatch({ type: 'REMOVE_ORDER', payload: id })}
-          isGirlsParty={state.isGirlsParty}
-          isAppreciationDay={state.isAppreciationDay}
-          isSevenLuck={state.isSevenLuck}
-        />
-      )}
-
-      {activeTab === 'checkout' && (
+      {effectiveTab === 'checkout' && (
         <ResultDisplay
           currentTotal={result.currentTotal}
           breakdown={result.breakdown}
@@ -110,7 +111,7 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
         />
       )}
 
-      {activeTab === 'ai' && (
+      {effectiveTab === 'ai' && (
         <BudgetRecommender
           result={result}
           state={state}
