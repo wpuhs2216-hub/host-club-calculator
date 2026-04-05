@@ -11,8 +11,8 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ storeName, children, wide, fullHeight, headerLeft, headerRight }) => {
     return (
-        <div className={`${wide ? 'max-w-[1400px]' : 'max-w-6xl'} mx-auto px-4 ${fullHeight ? 'h-screen flex flex-col overflow-hidden' : 'pb-6'}`} style={{ paddingTop: 'max(1.5rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))' }}>
-            <header className="mb-3 shrink-0">
+        <div className={`${wide ? 'max-w-[1400px]' : 'max-w-6xl'} mx-auto px-4 ${fullHeight ? 'h-dvh flex flex-col overflow-hidden' : 'pb-6'}`} style={{ paddingTop: 'max(1.5rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))' }}>
+            <header className={`${fullHeight ? 'mb-1' : 'mb-3'} shrink-0`}>
                 <div className="flex items-center justify-between">
                     <div className="shrink-0">{headerLeft}</div>
                     <h1 className="text-xl font-bold mb-1 text-center flex-1">
