@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.0.2';
+export const APP_VERSION = '2.0.3';
 
 export type VersionEntry = {
   version: string;
@@ -7,8 +7,10 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
-    version: '2.0.2',
+    version: '2.0.3',
     notes: [
+      '全画面表示時のスクロール問題修正',
+      '入店時間の入力をボタン式に変更（Android時計ピッカー問題修正）',
       'サイドバー常時表示時にライトモード・設定ボタンをヘッダーに移動',
     ],
   },
