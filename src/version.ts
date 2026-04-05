@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,13 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.3.0',
+    notes: [
+      '新規伝票をダイアログ1画面で作成（スワイプ不要）',
+      'LOページのタブレット2列表示対応',
+    ],
+  },
   {
     version: '1.2.1',
     notes: [

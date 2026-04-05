@@ -38,7 +38,7 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
 
     return (
         <div className="flex flex-col gap-4">
-            {/* ヘッダー */}
+            {/* ヘッダー (outside grid) */}
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-[var(--gold-color)] flex items-center gap-2">
                     ◆ LO（ラストオーダー一覧）
@@ -51,6 +51,7 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
                 )}
             </div>
 
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
             {tables.map(table => (
                 <div key={table.id} className="rounded-xl border border-[var(--border-color)] overflow-hidden bg-[var(--card-bg)]">
                     {/* テーブルヘッダー */}
@@ -299,6 +300,7 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
                     })}
                 </div>
             ))}
+            </div>
         </div>
     );
 };

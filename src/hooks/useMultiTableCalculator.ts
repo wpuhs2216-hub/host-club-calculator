@@ -11,8 +11,6 @@ export type SlipInfo = {
     id: string;
     name: string;
     state: CalculatorState;
-    isWizardActive: boolean;
-    wizardStep: number;
     activeTab: SlipTab;
 };
 
@@ -87,6 +85,7 @@ export type MultiAction =
     | { type: 'SET_ACTIVE_TABLE'; payload: string }
     | { type: 'SET_ACTIVE_SLIP'; payload: string | null }
     | { type: 'ADD_SLIP'; payload?: { tableId?: string } }
+    | { type: 'ADD_SLIP_WITH_DATA'; payload: { tableId?: string; data: { customerType: import('./useCalculator').CustomerType; initialSetPrice: number; entryTime: string; dohan: boolean } } }
     | { type: 'ADD_SLIP_FROM_COPY'; payload: { sourceSlipId: string; mode: 'full' | 'selective'; selectedFields?: string[]; tableId?: string } }
     | { type: 'REMOVE_SLIP'; payload: { tableId: string; slipId: string } }
     | { type: 'RENAME_SLIP'; payload: { tableId: string; slipId: string; name: string } }
@@ -95,8 +94,6 @@ export type MultiAction =
     | { type: 'MOVE_SLIP'; payload: { fromTableId: string; slipId: string; toTableId: string } }
     | { type: 'UPDATE_ALL_CURRENT_TIME'; payload: string }
     | { type: 'CLEAR_ALL_SLIPS' }
-    | { type: 'SET_WIZARD_STEP'; payload: number }
-    | { type: 'COMPLETE_WIZARD' }
     | { type: 'SET_ACTIVE_TAB'; payload: SlipTab }
     | { type: 'REINIT'; payload: { config: StoreConfig } };
 
@@ -125,8 +122,34 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
                         id: newSlipId,
                         name: nextSlipName(t.slips),
                         state: createInitialState(config),
-                        isWizardActive: true,
-                        wizardStep: 1,
+                        activeTab: 'checkout',
+                    };
+                    return { ...t, slips: [...t.slips, newSlip] };
+                }
+                return t;
+            });
+            return { ...state, tables: newTables, activeSlipId: newSlipId };
+        }
+        case 'ADD_SLIP_WITH_DATA': {
+            const { tableId: tId, data } = action.payload;
+            const tableId = tId ?? state.activeTableId;
+            const newSlipId = Date.now().toString();
+            const baseState = createInitialState(config);
+            // Apply dialog data and recreate pinned orders with correct half-off
+            const newState: CalculatorState = {
+                ...baseState,
+                customerType: data.customerType,
+                initialSetPrice: data.initialSetPrice,
+                entryTime: data.entryTime,
+                dohan: data.dohan,
+                orders: createPinnedOrders(config, data.customerType),
+            };
+            const newTables = state.tables.map(t => {
+                if (t.id === tableId) {
+                    const newSlip: SlipInfo = {
+                        id: newSlipId,
+                        name: nextSlipName(t.slips),
+                        state: newState,
                         activeTab: 'checkout',
                     };
                     return { ...t, slips: [...t.slips, newSlip] };
@@ -165,8 +188,6 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
                         id: newSlipId,
                         name: nextSlipName(t.slips),
                         state: newState,
-                        isWizardActive: false, // コピーはウィザードなし
-                        wizardStep: 1,
                         activeTab: 'checkout',
                     };
                     return { ...t, slips: [...t.slips, newSlip] };
@@ -244,26 +265,6 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
                 tables: state.tables.map(t => ({ ...t, slips: [] })),
                 activeSlipId: null,
             };
-        case 'SET_WIZARD_STEP': {
-            if (!state.activeSlipId) return state;
-            return {
-                ...state,
-                tables: state.tables.map(t => t.id === state.activeTableId
-                    ? { ...t, slips: t.slips.map(s => s.id === state.activeSlipId ? { ...s, wizardStep: action.payload } : s) }
-                    : t
-                )
-            };
-        }
-        case 'COMPLETE_WIZARD': {
-            if (!state.activeSlipId) return state;
-            return {
-                ...state,
-                tables: state.tables.map(t => t.id === state.activeTableId
-                    ? { ...t, slips: t.slips.map(s => s.id === state.activeSlipId ? { ...s, isWizardActive: false, activeTab: 'checkout' } : s) }
-                    : t
-                )
-            };
-        }
         case 'SET_ACTIVE_TAB': {
             if (!state.activeSlipId) return state;
             return {
@@ -337,8 +338,8 @@ export function useMultiTableCalculator() {
             multiDispatch({ type: 'ADD_SLIP_FROM_COPY', payload: { sourceSlipId, mode, selectedFields } }),
         removeSlip: (tableId: string, slipId: string) => multiDispatch({ type: 'REMOVE_SLIP', payload: { tableId, slipId } }),
         renameSlip: (tableId: string, slipId: string, name: string) => multiDispatch({ type: 'RENAME_SLIP', payload: { tableId, slipId, name } }),
-        setWizardStep: (step: number) => multiDispatch({ type: 'SET_WIZARD_STEP', payload: step }),
-        completeWizard: () => multiDispatch({ type: 'COMPLETE_WIZARD' }),
+        addSlipWithData: (data: { customerType: import('./useCalculator').CustomerType; initialSetPrice: number; entryTime: string; dohan: boolean }, tableId?: string) =>
+            multiDispatch({ type: 'ADD_SLIP_WITH_DATA', payload: { data, tableId } }),
         setActiveTab: (tab: SlipTab) => multiDispatch({ type: 'SET_ACTIVE_TAB', payload: tab }),
         multiDispatch,
     };

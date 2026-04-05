@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
 import type { Action } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
-import { SlipWizard } from './components/SlipWizard';
+import { NewSlipDialog } from './components/NewSlipDialog';
 import { SlipTabView } from './components/SlipTabView';
 import { SlipCopyModal } from './components/SlipCopyModal';
 import type { SlipInfo as CopySlipInfo } from './components/SlipCopyModal';
@@ -25,8 +25,8 @@ const updateSW = registerSW({
 function App() {
   const {
     tables, activeTableId, activeSlipId, activeTable, activeSlip, state, result, dispatch,
-    setActiveTable, setActiveSlip, addSlip, addSlipFromCopy, removeSlip, renameSlip,
-    setWizardStep, completeWizard, setActiveTab, multiDispatch
+    setActiveTable, setActiveSlip, addSlipWithData, addSlipFromCopy, removeSlip, renameSlip,
+    setActiveTab, multiDispatch
   } = useMultiTableCalculator();
   const { config } = useStoreConfig();
 
@@ -37,8 +37,9 @@ function App() {
     } catch { return false; }
   });
 
-  // コピーモーダル
+  // モーダル
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [showNewSlipDialog, setShowNewSlipDialog] = useState(false);
 
   // UI設定の永続化
   const loadUISetting = (key: string, fallback: boolean) => {
@@ -58,10 +59,10 @@ function App() {
     document.documentElement.classList.toggle('light-mode', lightMode);
   }, [lightMode]);
 
-  // 通常モード: テーブル選択なし、自動で①の伝票を作成
+  // 通常モード: 伝票がなければダイアログを自動表示
   useEffect(() => {
     if (!showLO && activeTable.slips.length === 0) {
-      addSlip();
+      setShowNewSlipDialog(true);
     }
   }, [showLO, activeTable.slips.length]);
 
@@ -190,7 +191,7 @@ function App() {
                       activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
                     }`}>{slip.name}</button>
                 ))}
-                <button onClick={() => addSlip()}
+                <button onClick={() => setShowNewSlipDialog(true)}
                   className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer"
                 >+ 伝票追加</button>
                 {activeTable.slips.length > 0 && (
@@ -212,7 +213,7 @@ function App() {
                       activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
                     }`}>{slip.name}</button>
                 ))}
-                <button onClick={() => addSlip()}
+                <button onClick={() => setShowNewSlipDialog(true)}
                   className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer"
                 >+ 伝票追加</button>
                 {activeTable.slips.length > 0 && (
@@ -254,37 +255,24 @@ function App() {
                 </div>
               </div>
 
-              {/* ウィザードモード or タブモード */}
-              {activeSlip.isWizardActive ? (
-                <SlipWizard
-                  state={state}
-                  dispatch={dispatch}
-                  wizardStep={activeSlip.wizardStep}
-                  onStepChange={setWizardStep}
-                  onComplete={completeWizard}
-                  config={config}
-                  onAddOrder={handleAddOrder}
-                />
-              ) : (
-                <SlipTabView
-                  state={state}
-                  result={result}
-                  dispatch={dispatch}
-                  activeTab={activeSlip.activeTab}
-                  onTabChange={setActiveTab}
-                  showAIDetail={showAIDetail}
-                  config={config}
-                  onTimeOverride={(time) => {
-                    if (time) {
-                      timeOverrideRef.current = true;
-                      dispatch({ type: 'SET_CURRENT_TIME', payload: time });
-                    } else {
-                      timeOverrideRef.current = false;
-                    }
-                  }}
-                  onAddOrder={handleAddOrder}
-                />
-              )}
+              <SlipTabView
+                state={state}
+                result={result}
+                dispatch={dispatch}
+                activeTab={activeSlip.activeTab}
+                onTabChange={setActiveTab}
+                showAIDetail={showAIDetail}
+                config={config}
+                onTimeOverride={(time) => {
+                  if (time) {
+                    timeOverrideRef.current = true;
+                    dispatch({ type: 'SET_CURRENT_TIME', payload: time });
+                  } else {
+                    timeOverrideRef.current = false;
+                  }
+                }}
+                onAddOrder={handleAddOrder}
+              />
             </>
           ) : (
             <div className="text-center py-12 text-gray-500">
@@ -316,6 +304,16 @@ function App() {
           onShowAIDetailChange={persistAIDetail}
         />
       )}
+
+      {/* 新規伝票ダイアログ */}
+      <NewSlipDialog
+        isOpen={showNewSlipDialog}
+        onClose={() => setShowNewSlipDialog(false)}
+        onCreate={(data) => {
+          addSlipWithData(data);
+          setShowNewSlipDialog(false);
+        }}
+      />
 
       {/* コピーモーダル */}
       <SlipCopyModal
