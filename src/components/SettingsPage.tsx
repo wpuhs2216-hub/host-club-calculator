@@ -141,7 +141,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
                                 <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">機能表示</h3>
                                 <ToggleRow label="運営モード" checked={showLO} onChange={onShowLOChange} />
-                                <ToggleRow label="サイドバー固定（タブレット）" checked={sidebarPinned} onChange={onSidebarPinnedChange} />
+                                <ToggleRow label="サイドバー常時表示" checked={sidebarPinned} onChange={onSidebarPinnedChange} />
                                 <ToggleRow label="AI予算プランナーの詳細表示" checked={showAIDetail} onChange={onShowAIDetailChange} />
                                 {showLO && onLoDisplayModeChange && (
                                     <div className="mt-2">

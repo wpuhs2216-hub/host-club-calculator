@@ -22,17 +22,6 @@ const updateSW = registerSW({
   onNeedRefresh() { updateSW(true); },
 });
 
-function useIsTablet() {
-  const [isTablet, setIsTablet] = useState(() => window.matchMedia('(min-width: 768px)').matches);
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    const handler = (e: MediaQueryListEvent) => setIsTablet(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isTablet;
-}
-
 function useSwipeSidebar(sidebarPinned: boolean, showMobileSidebar: boolean, setShowMobileSidebar: (v: boolean) => void) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -67,7 +56,6 @@ function App() {
     setActiveTab, multiDispatch
   } = useMultiTableCalculator();
   const { config } = useStoreConfig();
-  const isTablet = useIsTablet();
 
   // アップデート通知
   const [showUpdateNotice, setShowUpdateNotice] = useState(() => {
@@ -100,8 +88,8 @@ function App() {
   const persistLoDisplayMode = (v: LODisplayMode) => { setLoDisplayMode(v); localStorage.setItem('ui-loDisplayMode', v); };
   const persistSidebarPinned = (v: boolean) => { setSidebarPinned(v); localStorage.setItem('ui-sidebarPinned', String(v)); };
 
-  // タブレットかつサイドバー固定ON → 常時表示
-  const sidebarVisible = isTablet && sidebarPinned;
+  // サイドバー固定ON → 常時表示（画面幅に依存しない）
+  const sidebarVisible = sidebarPinned;
 
   // スワイプでサイドバー開閉
   useSwipeSidebar(sidebarVisible, showMobileSidebar, setShowMobileSidebar);
@@ -249,7 +237,7 @@ function App() {
   );
 
   return (
-    <Layout storeName={config.storeName}>
+    <Layout storeName={config.storeName} wide={sidebarVisible}>
       {/* サイドバー開閉ボタン（左上固定） — サイドバー非固定時のみ */}
       {!sidebarVisible && (
         <button
@@ -281,7 +269,7 @@ function App() {
       <div className={sidebarVisible ? 'flex gap-4' : ''}>
         {/* 固定サイドバー（LO埋め込み時は幅広） */}
         {sidebarVisible && (
-          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[420px]' : 'w-60'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
+          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[min(420px,40vw)]' : 'w-[min(240px,30vw)]'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
             {sidebarContent}
           </div>
         )}

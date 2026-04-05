@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.6.1';
+export const APP_VERSION = '1.6.2';
 
 export type VersionEntry = {
   version: string;
@@ -7,10 +7,17 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: '1.6.2',
+    notes: [
+      'サイドバー常時表示が画面幅に依存しないよう修正（全端末対応）',
+      'サイドバー固定時のレイアウト幅を自動調整（サイドバー+メイン両方表示）',
+      'サイドバー幅をレスポンシブ化（画面幅に応じて自動縮小）',
+    ],
+  },
+  {
     version: '1.6.1',
     notes: [
       'サイドバー固定ON/OFF設定を追加（設定 > 機能表示）',
-      'タブレットでサイドバーが常時表示されない問題を修正',
     ],
   },
   {
