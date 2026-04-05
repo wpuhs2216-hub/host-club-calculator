@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.4.1';
 
 export type VersionEntry = {
   version: string;
@@ -7,14 +7,19 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: '1.4.1',
+    notes: [
+      'ライトモード・設定ボタンをサイドバー内に移動',
+      'サイドバー開閉ボタンを左上固定に配置',
+    ],
+  },
+  {
     version: '1.4.0',
     notes: [
-      '商品オーダーをダイアログ化（タブから独立モーダルに）',
-      'テーブル/伝票選択を左サイドバーに格納',
-      '伝票名・本数入力のフォーカス時に全選択（即上書き可能）',
+      'オーダータブにデフォルトオーダー一覧表示（追加はダイアログ）',
       'テーブル/伝票選択を左サイドバーに格納（タブレット常時表示）',
+      '伝票名・本数入力のフォーカス時に全選択（即上書き可能）',
       'iPhoneステータスバー重なり修正',
-      '設定・ライトモードをテキスト付きボタンに変更',
     ],
   },
   {

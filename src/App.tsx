@@ -129,7 +129,7 @@ function App() {
     <div className="flex flex-col h-full">
       {/* サイドバーヘッダー */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0"
-        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
+        style={{ paddingTop: isTablet ? undefined : 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
         <span className="text-sm font-bold text-[var(--gold-color)]">
           {showLO ? 'テーブル / 伝票' : '伝票'}
         </span>
@@ -189,52 +189,59 @@ function App() {
           )}
         </div>
       </div>
-    </div>
-  );
 
-  return (
-    <Layout storeName={config.storeName}>
-      {/* 上部ボタンバー（safe-area対応） */}
-      <div className="flex items-center justify-between mb-3 gap-2"
-        style={{ paddingTop: isTablet ? '0' : undefined }}>
+      {/* サイドバー下部: ライトモード + 設定 */}
+      <div className="p-3 border-t border-[var(--border-color)] shrink-0 flex flex-col gap-2">
         <button
           onClick={() => persistLightMode(!lightMode)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] text-sm font-bold transition-all outline-none cursor-pointer hover:border-[var(--gold-color)]"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] text-sm font-bold transition-all outline-none cursor-pointer hover:border-[var(--gold-color)]"
         >
           {lightMode ? '◐' : '◑'}
-          <span>{lightMode ? 'ダーク' : 'ライト'}</span>
+          <span>{lightMode ? 'ダークモード' : 'ライトモード'}</span>
         </button>
-
-        {/* 運営モード切替（中央） */}
-        {showLO && (
-          <div className="flex border border-[var(--border-color)] rounded-lg overflow-hidden">
-            <button
-              onClick={() => setCurrentPage('calculator')}
-              className={`px-4 py-2 text-sm font-bold transition-colors border-none cursor-pointer outline-none ${
-                currentPage === 'calculator' ? 'bg-[var(--gold-color)] text-black' : 'bg-[var(--input-bg)] text-white hover:bg-[#444]'
-              }`}
-            >計算</button>
-            <button
-              onClick={() => setCurrentPage('lo')}
-              className={`px-4 py-2 text-sm font-bold transition-colors border-none cursor-pointer outline-none ${
-                currentPage === 'lo' ? 'bg-[var(--gold-color)] text-black' : 'bg-[var(--input-bg)] text-white hover:bg-[#444]'
-              }`}
-            >LO</button>
-          </div>
-        )}
-
         <button
-          onClick={() => setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings')}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
+          onClick={() => { setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings'); setShowMobileSidebar(false); }}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
             currentPage === 'settings'
               ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
-              : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:bg-[#444]'
+              : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:border-[var(--gold-color)]'
           }`}
         >
           <span>◈</span>
           <span>設定</span>
         </button>
       </div>
+    </div>
+  );
+
+  return (
+    <Layout storeName={config.storeName}>
+      {/* サイドバー開閉ボタン（左上固定） — モバイルのみ */}
+      {!isTablet && (
+        <button
+          onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+          style={{ top: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}
+          className="fixed left-4 z-[999] w-10 h-10 rounded-full border border-[var(--border-color)] flex items-center justify-center text-lg transition-all outline-none cursor-pointer bg-[var(--input-bg)] text-[var(--text-color)] hover:border-[var(--gold-color)]"
+        >☰</button>
+      )}
+
+      {/* 運営モード切替（LOモード時のみ） */}
+      {showLO && (
+        <div className="flex mb-3 border border-[var(--border-color)] rounded-lg overflow-hidden">
+          <button
+            onClick={() => setCurrentPage('calculator')}
+            className={`flex-1 py-2.5 text-sm font-bold transition-colors border-none cursor-pointer outline-none ${
+              currentPage === 'calculator' ? 'bg-[var(--gold-color)] text-black' : 'bg-[var(--input-bg)] text-white hover:bg-[#444]'
+            }`}
+          >計算</button>
+          <button
+            onClick={() => setCurrentPage('lo')}
+            className={`flex-1 py-2.5 text-sm font-bold transition-colors border-none cursor-pointer outline-none ${
+              currentPage === 'lo' ? 'bg-[var(--gold-color)] text-black' : 'bg-[var(--input-bg)] text-white hover:bg-[#444]'
+            }`}
+          >LO</button>
+        </div>
+      )}
 
       {/* メインコンテンツ: タブレットではサイドバー+メイン横並び */}
       <div className={isTablet && currentPage === 'calculator' ? 'flex gap-4' : ''}>
@@ -260,23 +267,18 @@ function App() {
           {/* 計算ページ */}
           {currentPage === 'calculator' && (
             <div className="flex flex-col gap-4">
-              {/* モバイル: コンパクト伝票セレクター（☰ + 伝票タブ） */}
+              {/* モバイル: コンパクト伝票セレクター */}
               {!isTablet && (
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowMobileSidebar(true)}
-                    className="w-10 h-10 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] flex items-center justify-center text-lg cursor-pointer hover:border-[var(--gold-color)] transition-colors shrink-0"
-                  >☰</button>
-                  <div className="flex gap-2 flex-1 overflow-x-auto items-center" style={{ scrollbarWidth: 'none' }}>
-                    {activeTable.slips.map(slip => (
-                      <button key={slip.id} onClick={() => setActiveSlip(slip.id)}
-                        className={`px-3 py-1.5 rounded-md border text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${
-                          activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
-                        }`}>{slip.name}</button>
-                    ))}
-                    <button onClick={() => setShowNewSlipDialog(true)}
-                      className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer whitespace-nowrap shrink-0"
-                    >+</button>
-                  </div>
+                <div className="flex gap-2 overflow-x-auto items-center" style={{ scrollbarWidth: 'none' }}>
+                  {activeTable.slips.map(slip => (
+                    <button key={slip.id} onClick={() => setActiveSlip(slip.id)}
+                      className={`px-3 py-1.5 rounded-md border text-sm font-bold transition-colors whitespace-nowrap shrink-0 ${
+                        activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
+                      }`}>{slip.name}</button>
+                  ))}
+                  <button onClick={() => setShowNewSlipDialog(true)}
+                    className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer whitespace-nowrap shrink-0"
+                  >+</button>
                   {showLO && (
                     <span className="text-xs text-gray-400 shrink-0 font-bold">{activeTable.name}</span>
                   )}
