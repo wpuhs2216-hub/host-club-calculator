@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.6.2';
+export const APP_VERSION = '1.6.3';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,12 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.6.3',
+    notes: [
+      'サイドバー常時表示時に右下に料金ウィジェットを常時表示',
+    ],
+  },
   {
     version: '1.6.2',
     notes: [
