@@ -38,6 +38,7 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
   activeTab,
   onTabChange,
   showAIDetail,
+  config,
   onTimeOverride,
   onOpenOrderDialog,
 }) => {
@@ -207,6 +208,7 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
           result={result}
           state={state}
           showDetail={showAIDetail}
+          taxRate={config.taxRate}
           onAddOrders={(items) => {
             items.forEach((item) => {
               dispatch({

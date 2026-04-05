@@ -237,14 +237,14 @@ function multiReducer(state: MultiTableState, action: MultiAction, config: Store
             const fromTable = state.tables.find(t => t.id === fromTableId);
             const slip = fromTable?.slips.find(s => s.id === slipId);
             if (!slip) return state;
-            return {
-                ...state,
-                tables: state.tables.map(t => {
-                    if (t.id === fromTableId) return { ...t, slips: t.slips.filter(s => s.id !== slipId) };
-                    if (t.id === toTableId) return { ...t, slips: [...t.slips, slip] };
-                    return t;
-                })
-            };
+            const newTables = state.tables.map(t => {
+                if (t.id === fromTableId) return { ...t, slips: t.slips.filter(s => s.id !== slipId) };
+                if (t.id === toTableId) return { ...t, slips: [...t.slips, slip] };
+                return t;
+            });
+            // アクティブ伝票を移動した場合、移動先テーブルに追従
+            const newActiveTableId = state.activeSlipId === slipId ? toTableId : state.activeTableId;
+            return { ...state, tables: newTables, activeTableId: newActiveTableId };
         }
         case 'UPDATE_ALL_CURRENT_TIME': {
             const time = action.payload;
@@ -292,7 +292,23 @@ export function useMultiTableCalculator() {
         []
     );
 
-    const [multiState, multiDispatch] = useReducer(wrappedReducer, config, createInitialMultiState);
+    const [multiState, multiDispatch] = useReducer(wrappedReducer, config, (cfg) => {
+        try {
+            const saved = localStorage.getItem('multi-table-state');
+            if (saved) {
+                const parsed = JSON.parse(saved) as MultiTableState;
+                if (parsed.tables && parsed.tables.length === cfg.tableNames.length) {
+                    return parsed;
+                }
+            }
+        } catch { /* ignore */ }
+        return createInitialMultiState(cfg);
+    });
+
+    // 状態変更時にlocalStorageに保存
+    useEffect(() => {
+        try { localStorage.setItem('multi-table-state', JSON.stringify(multiState)); } catch { /* ignore */ }
+    }, [multiState]);
 
     // store切替時にテーブルレイアウトをリセット
     const prevStoreIdRef = useRef(config.id);
@@ -300,6 +316,7 @@ export function useMultiTableCalculator() {
         if (config.id !== prevStoreIdRef.current) {
             prevStoreIdRef.current = config.id;
             multiDispatch({ type: 'REINIT', payload: { config } });
+            try { localStorage.removeItem('multi-table-state'); } catch { /* ignore */ }
         }
     }, [config.id]);
 

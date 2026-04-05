@@ -104,6 +104,8 @@ function App() {
   useEffect(() => { document.documentElement.classList.toggle('light-mode', lightMode); }, [lightMode]);
 
   const timeOverrideRef = useRef(false);
+  // 伝票切替時にtimeOverrideをリセット（デバッグ時間設定が別伝票に影響しないように）
+  useEffect(() => { timeOverrideRef.current = false; }, [activeSlipId]);
   useEffect(() => {
     const updateTime = () => {
       if (timeOverrideRef.current) return;

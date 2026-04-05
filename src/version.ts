@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.5.4';
+export const APP_VERSION = '1.6.0';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,16 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.6.0',
+    notes: [
+      '伝票データの自動保存（ページリロードしても復帰）',
+      '伝票移動時にアクティブテーブルが移動先に追従するよう修正',
+      '予算プランナーの税率計算がハードコードされていた問題を修正',
+      'カスタムオーダーの不正価格入力を防止',
+      'デバッグ時間設定が伝票切替後も残る問題を修正',
+    ],
+  },
   {
     version: '1.5.4',
     notes: [

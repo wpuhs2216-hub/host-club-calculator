@@ -91,8 +91,9 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
 
     const handleAdd = () => {
         if (isCustom) {
-            if (!customName || !customPrice) return;
-            onAdd(customName, Number(customPrice), false, true, false);
+            const price = Number(customPrice);
+            if (!customName || !customPrice || isNaN(price) || price <= 0) return;
+            onAdd(customName, price, false, true, false);
             setCustomName('');
             setCustomPrice('');
         } else {

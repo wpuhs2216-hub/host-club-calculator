@@ -15,6 +15,7 @@ interface BudgetRecommenderProps {
     state: CalculatorState;
     showDetail?: boolean;
     onAddOrders: (items: AddItem[]) => void;
+    taxRate: number;
 }
 
 const CHAMPAGNE_HALF_NAMES = [
@@ -27,7 +28,7 @@ const SLIDER_MIN = 10000;
 const SLIDER_MAX = 200000;
 const SLIDER_STEP = 5000;
 
-export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, state, showDetail = false, onAddOrders }) => {
+export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, state, showDetail = false, onAddOrders, taxRate: configTaxRate }) => {
     const [targetBudgetStr, setTargetBudgetStr] = useState<string>('');
     const [selectedTimeIdx, setSelectedTimeIdx] = useState<number | null>(null);
 
@@ -55,7 +56,7 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
     // 初回でドリンク0本→追加時に税率が変わる
     const activeOrders = state.orders.filter(o => o.count > 0);
     const totalItemsCount = activeOrders.reduce((sum, item) => sum + item.count, 0);
-    const taxRateAfterAdd = (state.customerType === 'initial' && totalItemsCount === 0) ? 0.35 : result.taxRate;
+    const taxRateAfterAdd = (state.customerType === 'initial' && totalItemsCount === 0) ? configTaxRate : result.taxRate;
 
     // 各スケジュールエントリの予算分析
     const timeSlots = useMemo(() => {
