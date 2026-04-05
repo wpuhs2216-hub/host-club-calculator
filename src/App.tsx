@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
 import type { Action } from './hooks/useCalculator';
-import { calculateResult } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
 import { NewSlipDialog } from './components/NewSlipDialog';
 import { SlipTabView } from './components/SlipTabView';
@@ -17,10 +16,6 @@ import { APP_VERSION } from './version';
 
 type PageTab = 'calculator' | 'lo' | 'settings';
 type LODisplayMode = 'sidebar' | 'tab';
-
-const CUSTOMER_TYPE_SHORT: Record<string, string> = {
-  initial: '新規', r_within: 'R(有)', r_after: 'R(無)', regular: '正規',
-};
 
 // PWA即時更新
 const updateSW = registerSW({
@@ -186,39 +181,13 @@ function App() {
           )}
         </div>
 
-        {/* LO一覧（サイドバーモード時） */}
+        {/* LO一覧（サイドバーモード時） — LOPageをそのまま埋め込み */}
         {showLO && loDisplayMode === 'sidebar' && (
-          <>
-            <div className="border-t border-[var(--border-color)] pt-3 mt-1">
-              <label className="text-xs text-gray-400 block mb-2">LO一覧</label>
-              {tables.map(table => {
-                if (table.slips.length === 0) return null;
-                return (
-                  <div key={table.id} className="mb-2">
-                    <div className="text-xs font-bold text-[var(--gold-color)] mb-1">{table.name}</div>
-                    {table.slips.map(slip => {
-                      const res = calculateResult(slip.state, config, { loCapEnabled: true });
-                      const closingResult = res.schedule[res.schedule.length - 1];
-                      return (
-                        <div key={slip.id}
-                          onClick={() => { setActiveTable(table.id); setActiveSlip(slip.id); if (currentPage !== 'calculator') setCurrentPage('calculator'); setShowMobileSidebar(false); }}
-                          className="flex justify-between items-center px-2 py-1.5 rounded-md hover:bg-[rgba(255,215,0,0.05)] cursor-pointer mb-0.5 text-xs">
-                          <div className="flex-1 min-w-0">
-                            <span className="font-bold">{slip.name}</span>
-                            <span className="text-gray-500 ml-1">{CUSTOMER_TYPE_SHORT[slip.state.customerType]}</span>
-                          </div>
-                          <div className="flex gap-3 shrink-0">
-                            <span className="text-gray-400">¥{res.currentTotal.toLocaleString()}</span>
-                            <span className="font-bold text-[var(--gold-color)]">¥{closingResult?.totalPrice.toLocaleString() ?? '---'}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          <div className="border-t border-[var(--border-color)] pt-3 mt-1">
+            <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip}
+              onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })}
+              onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })} />
+          </div>
         )}
       </div>
 
@@ -277,9 +246,9 @@ function App() {
 
       {/* メインコンテンツ */}
       <div className={isTablet ? 'flex gap-4' : ''}>
-        {/* タブレット: 常時表示サイドバー */}
+        {/* タブレット: 常時表示サイドバー（LO埋め込み時は幅広） */}
         {isTablet && (
-          <div className="w-60 shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]">
+          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[420px]' : 'w-60'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
             {sidebarContent}
           </div>
         )}
@@ -288,7 +257,7 @@ function App() {
         {!isTablet && showMobileSidebar && (
           <div className="fixed inset-0 z-[900] flex">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileSidebar(false)} />
-            <div className="relative w-72 max-w-[80vw] h-full bg-[var(--card-bg,#111827)] border-r border-[var(--border-color)] shadow-2xl animate-slide-in-left overflow-hidden">
+            <div className={`relative ${showLO && loDisplayMode === 'sidebar' ? 'w-[90vw]' : 'w-72 max-w-[80vw]'} h-full bg-[var(--card-bg,#111827)] border-r border-[var(--border-color)] shadow-2xl animate-slide-in-left overflow-hidden`}>
               {sidebarContent}
             </div>
           </div>
