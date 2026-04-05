@@ -238,7 +238,7 @@ function App() {
   );
 
   return (
-    <Layout storeName={config.storeName} wide={sidebarVisible}>
+    <Layout storeName={config.storeName} wide={sidebarVisible} fullHeight={sidebarVisible}>
       {/* サイドバー開閉ボタン（左上固定） — サイドバー非固定時のみ */}
       {!sidebarVisible && (
         <button
@@ -267,10 +267,10 @@ function App() {
       )}
 
       {/* メインコンテンツ */}
-      <div className={sidebarVisible ? 'flex gap-4' : ''}>
+      <div className={sidebarVisible ? 'flex gap-4 h-full min-h-0' : ''}>
         {/* 固定サイドバー（LO埋め込み時は幅広） */}
         {sidebarVisible && (
-          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[min(420px,40vw)]' : 'w-[min(240px,30vw)]'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-y-auto self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
+          <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[min(420px,40vw)]' : 'w-[min(240px,30vw)]'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-y-auto`} style={{ scrollbarWidth: 'thin' }}>
             {sidebarContent}
           </div>
         )}
@@ -286,7 +286,7 @@ function App() {
         )}
 
         {/* メインコンテンツエリア */}
-        <div className="flex-1 min-w-0">
+        <div className={`flex-1 min-w-0 ${sidebarVisible ? 'overflow-y-auto pb-4' : ''}`} style={sidebarVisible ? { scrollbarWidth: 'thin' } : undefined}>
           {/* 計算ページ */}
           {currentPage === 'calculator' && (
             <div className="flex flex-col gap-4">
@@ -351,6 +351,26 @@ function App() {
                     onOpenOrderDialog={() => setShowOrderDialog(true)}
                     hideCheckout={sidebarVisible}
                   />
+
+                  {/* サイドバー常時表示時: 会計タブをメイン画面の下に表示 */}
+                  {sidebarVisible && result && (
+                    <div className="mt-4">
+                      <ResultDisplay
+                        currentTotal={result.currentTotal}
+                        breakdown={result.breakdown}
+                        previousTotal={result.previousTotal}
+                        previousBreakdown={result.previousBreakdown}
+                        schedule={result.schedule}
+                        taxRate={result.taxRate}
+                        currentTime={state?.currentTime ?? '20:00'}
+                        isOutOfHours={result.isOutOfHours}
+                        onTimeOverride={(time) => {
+                          if (time) { timeOverrideRef.current = true; dispatch({ type: 'SET_CURRENT_TIME', payload: time }); }
+                          else { timeOverrideRef.current = false; }
+                        }}
+                      />
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
@@ -441,29 +461,6 @@ function App() {
         }} />
       )}
 
-      {/* サイドバー常時表示時: 右下に会計タブを表示 */}
-      {sidebarVisible && result && activeSlip && currentPage === 'calculator' && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-lg p-4 w-[min(400px,40vw)] max-h-[calc(100vh-6rem)] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          <div className="text-xs text-gray-400 mb-2">
-            {showLO && <span className="text-[var(--gold-color)] mr-1">{activeTable.name}</span>}
-            {activeSlip.name}
-          </div>
-          <ResultDisplay
-            currentTotal={result.currentTotal}
-            breakdown={result.breakdown}
-            previousTotal={result.previousTotal}
-            previousBreakdown={result.previousBreakdown}
-            schedule={result.schedule}
-            taxRate={result.taxRate}
-            currentTime={state?.currentTime ?? '20:00'}
-            isOutOfHours={result.isOutOfHours}
-            onTimeOverride={(time) => {
-              if (time) { timeOverrideRef.current = true; dispatch({ type: 'SET_CURRENT_TIME', payload: time }); }
-              else { timeOverrideRef.current = false; }
-            }}
-          />
-        </div>
-      )}
     </Layout>
   );
 }
