@@ -213,32 +213,51 @@ function App() {
         )}
       </div>
 
-      {/* サイドバー下部: ライトモード + 設定 */}
-      <div className="p-3 border-t border-[var(--border-color)] shrink-0 flex flex-col gap-2">
-        <button
-          onClick={() => persistLightMode(!lightMode)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] text-sm font-bold transition-all outline-none cursor-pointer hover:border-[var(--gold-color)]"
-        >
-          {lightMode ? '◐' : '◑'}
-          <span>{lightMode ? 'ダークモード' : 'ライトモード'}</span>
-        </button>
-        <button
-          onClick={() => { setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings'); setShowMobileSidebar(false); }}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
-            currentPage === 'settings'
-              ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
-              : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:border-[var(--gold-color)]'
-          }`}
-        >
-          <span>◈</span>
-          <span>設定</span>
-        </button>
-      </div>
+      {/* サイドバー下部: ライトモード + 設定（常時表示時はヘッダーに移動するため非表示） */}
+      {!sidebarVisible && (
+        <div className="p-3 border-t border-[var(--border-color)] shrink-0 flex flex-col gap-2">
+          <button
+            onClick={() => persistLightMode(!lightMode)}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] text-sm font-bold transition-all outline-none cursor-pointer hover:border-[var(--gold-color)]"
+          >
+            {lightMode ? '◐' : '◑'}
+            <span>{lightMode ? 'ダークモード' : 'ライトモード'}</span>
+          </button>
+          <button
+            onClick={() => { setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings'); setShowMobileSidebar(false); }}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
+              currentPage === 'settings'
+                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:border-[var(--gold-color)]'
+            }`}
+          >
+            <span>◈</span>
+            <span>設定</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <Layout storeName={config.storeName} wide={sidebarVisible} fullHeight={sidebarVisible}>
+    <Layout storeName={config.storeName} wide={sidebarVisible} fullHeight={sidebarVisible}
+      headerLeft={sidebarVisible ? (
+        <button onClick={() => persistLightMode(!lightMode)}
+          className="w-9 h-9 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] flex items-center justify-center text-sm cursor-pointer hover:border-[var(--gold-color)] transition-colors">
+          {lightMode ? '◐' : '◑'}
+        </button>
+      ) : undefined}
+      headerRight={sidebarVisible ? (
+        <button onClick={() => setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings')}
+          className={`w-9 h-9 rounded-full border flex items-center justify-center text-sm cursor-pointer transition-colors ${
+            currentPage === 'settings'
+              ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+              : 'bg-[var(--input-bg)] text-[var(--text-color)] border-[var(--border-color)] hover:border-[var(--gold-color)]'
+          }`}>
+          ◈
+        </button>
+      ) : undefined}
+    >
       {/* サイドバー開閉ボタン（左上固定） — サイドバー非固定時のみ */}
       {!sidebarVisible && (
         <button

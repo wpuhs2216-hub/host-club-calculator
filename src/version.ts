@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.0.1';
+export const APP_VERSION = '2.0.2';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,12 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.0.2',
+    notes: [
+      'サイドバー常時表示時にライトモード・設定ボタンをヘッダーに移動',
+    ],
+  },
   {
     version: '2.0.1',
     notes: [
