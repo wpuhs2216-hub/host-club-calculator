@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.0.0';
+export const APP_VERSION = '2.0.1';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,13 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.0.1',
+    notes: [
+      'サイドバー常時表示時に右下に会計タブ（内訳・スケジュール等）を常時表示',
+      '常時表示時はタブから会計を廃止（右下パネルに統合）',
+    ],
+  },
   {
     version: '2.0.0',
     notes: [

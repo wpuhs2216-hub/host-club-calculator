@@ -16,6 +16,7 @@ interface SlipTabViewProps {
   config: StoreConfig;
   onTimeOverride: (time: string | null) => void;
   onOpenOrderDialog: () => void;
+  hideCheckout?: boolean;
 }
 
 const TABS: { id: SlipTab; label: string }[] = [
@@ -41,17 +42,20 @@ export const SlipTabView: React.FC<SlipTabViewProps> = ({
   config,
   onTimeOverride,
   onOpenOrderDialog,
+  hideCheckout,
 }) => {
   const isInitialOrR = state.customerType === 'initial' || state.customerType === 'r_within' || state.customerType === 'r_after';
   const hasHalfOffChampagne = state.orders.some(o =>
     o.isHalfOff && o.count > 0 && CHAMPAGNE_HALF_NAMES.includes(o.baseName)
   );
 
+  const visibleTabs = hideCheckout ? TABS.filter(t => t.id !== 'checkout') : TABS;
+
   return (
     <div>
       {/* Tab bar */}
       <div className="flex border-b border-[var(--border-color)] mb-4">
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.id;
           // オーダータブにバッジ表示
           const badge = tab.id === 'orders'

@@ -9,6 +9,7 @@ import { OrderDialog } from './components/OrderDialog';
 import { SlipCopyModal } from './components/SlipCopyModal';
 import type { SlipInfo as CopySlipInfo } from './components/SlipCopyModal';
 import { LOPage } from './components/LOPage';
+import { ResultDisplay } from './components/ResultDisplay';
 import { SettingsPage } from './components/SettingsPage';
 import { UpdateNotice } from './components/UpdateNotice';
 import { useStoreConfig } from './contexts/StoreConfigContext';
@@ -348,6 +349,7 @@ function App() {
                       else { timeOverrideRef.current = false; }
                     }}
                     onOpenOrderDialog={() => setShowOrderDialog(true)}
+                    hideCheckout={sidebarVisible}
                   />
                 </>
               ) : (
@@ -439,21 +441,27 @@ function App() {
         }} />
       )}
 
-      {/* サイドバー常時表示時: 右下に料金表示 */}
+      {/* サイドバー常時表示時: 右下に会計タブを表示 */}
       {sidebarVisible && result && activeSlip && currentPage === 'calculator' && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-lg px-5 py-3 min-w-[180px]">
-          <div className="text-xs text-gray-400 mb-1">
+        <div className="fixed bottom-4 right-4 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-lg p-4 w-[min(400px,40vw)] max-h-[calc(100vh-6rem)] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          <div className="text-xs text-gray-400 mb-2">
             {showLO && <span className="text-[var(--gold-color)] mr-1">{activeTable.name}</span>}
             {activeSlip.name}
           </div>
-          <div className="text-2xl font-bold text-[var(--gold-color)] tracking-tight">
-            ¥{result.currentTotal.toLocaleString()}
-          </div>
-          {result.previousTotal !== null && (
-            <div className="text-xs text-gray-400 mt-1">
-              前回計: <span className="text-white font-bold">¥{result.previousTotal.toLocaleString()}</span>
-            </div>
-          )}
+          <ResultDisplay
+            currentTotal={result.currentTotal}
+            breakdown={result.breakdown}
+            previousTotal={result.previousTotal}
+            previousBreakdown={result.previousBreakdown}
+            schedule={result.schedule}
+            taxRate={result.taxRate}
+            currentTime={state?.currentTime ?? '20:00'}
+            isOutOfHours={result.isOutOfHours}
+            onTimeOverride={(time) => {
+              if (time) { timeOverrideRef.current = true; dispatch({ type: 'SET_CURRENT_TIME', payload: time }); }
+              else { timeOverrideRef.current = false; }
+            }}
+          />
         </div>
       )}
     </Layout>
