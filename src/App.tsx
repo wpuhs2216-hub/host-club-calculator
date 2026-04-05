@@ -80,7 +80,7 @@ function App() {
   const [showAIDetail, setShowAIDetail] = useState(() => loadUIBool('ui-showAIDetail', false));
   const [lightMode, setLightMode] = useState(() => loadUIBool('ui-lightMode', false));
   const [loDisplayMode, setLoDisplayMode] = useState<LODisplayMode>(() => loadUISetting('ui-loDisplayMode', 'sidebar') as LODisplayMode);
-  const [sidebarPinned, setSidebarPinned] = useState(() => loadUIBool('ui-sidebarPinned', true));
+  const [sidebarPinned, setSidebarPinned] = useState(() => loadUIBool('ui-sidebarPinned', false));
 
   const persistShowLO = (v: boolean) => { setShowLO(v); localStorage.setItem('ui-showLO', String(v)); };
   const persistAIDetail = (v: boolean) => { setShowAIDetail(v); localStorage.setItem('ui-showAIDetail', String(v)); };
