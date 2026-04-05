@@ -11,6 +11,7 @@ interface LOPageProps {
     onMoveSlip?: (fromTableId: string, slipId: string, toTableId: string) => void;
     onClearAllSlips?: () => void;
     onOpenSlip?: (tableId: string, slipId: string) => void;
+    compact?: boolean;
 }
 
 const CUSTOMER_TYPE_LABELS: Record<CustomerType, string> = {
@@ -28,7 +29,7 @@ function isNearClosing(): boolean {
     return (h === 23 && m >= 45) || (h >= 0 && h < 6);
 }
 
-export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip, onMoveSlip, onClearAllSlips, onOpenSlip }) => {
+export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip, onMoveSlip, onClearAllSlips, onOpenSlip, compact }) => {
     const [editingKey, setEditingKey] = useState<string | null>(null);
     const [movingSlipKey, setMovingSlipKey] = useState<string | null>(null);
     // 伝票ごとの表示モード（現在 or ラストまで）
@@ -59,18 +60,18 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
                 )}
             </div>
 
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
+            <div className={`flex flex-col ${compact ? '' : 'md:grid md:grid-cols-2'} gap-4`}>
             {sortedTables.map(table => (
                 <div key={table.id} className="rounded-xl border border-[var(--border-color)] overflow-hidden bg-[var(--card-bg)]">
                     {/* テーブルヘッダー */}
-                    <div className="px-4 py-3 border-b border-[var(--border-color)] bg-gradient-to-r from-[rgba(255,215,0,0.1)] to-transparent">
-                        <span className="text-lg font-bold text-[var(--gold-color)]">{table.name}</span>
-                        <span className="text-sm text-gray-400 ml-2">({table.slips.length}伝票)</span>
+                    <div className={`${compact ? 'px-3 py-2' : 'px-4 py-3'} border-b border-[var(--border-color)] bg-gradient-to-r from-[rgba(255,215,0,0.1)] to-transparent`}>
+                        <span className={`${compact ? 'text-sm' : 'text-lg'} font-bold text-[var(--gold-color)]`}>{table.name}</span>
+                        <span className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 ml-2`}>({table.slips.length}伝票)</span>
                     </div>
 
                     {/* 伝票なし */}
                     {table.slips.length === 0 && (
-                        <div className="p-4 text-center text-gray-500 text-sm">伝票なし</div>
+                        <div className={`${compact ? 'p-2 text-xs' : 'p-4 text-sm'} text-center text-gray-500`}>伝票なし</div>
                     )}
 
                     {/* 各伝票 */}
@@ -89,61 +90,105 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
                         return (
                             <div key={slip.id} className="border-b border-[var(--border-color)] last:border-b-0">
                                 {/* 伝票ヘッダー */}
-                                <div className="p-4">
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                        <div>
-                                            <div className="text-base font-bold">
-                                                {slip.name}
-                                                <span className="text-sm text-gray-400 font-normal ml-2">
-                                                    {CUSTOMER_TYPE_LABELS[slip.state.customerType]} | 入店 {slip.state.entryTime}
-                                                    {slip.state.dohan && ' | 同伴'}
-                                                    {slip.state.additionalNominationCount > 0 && ` | 複数指名+${slip.state.additionalNominationCount}`}
-                                                </span>
+                                <div className={compact ? 'p-2' : 'p-4'}>
+                                    {compact ? (
+                                      <>
+                                        {/* コンパクト: 伝票名(タップで開く) + 料金を1行に */}
+                                        <div className="flex justify-between items-center gap-2">
+                                            <div
+                                              className={`flex-1 min-w-0 ${onOpenSlip ? 'cursor-pointer hover:text-[var(--accent-color)]' : ''}`}
+                                              onClick={() => onOpenSlip?.(table.id, slip.id)}
+                                            >
+                                                <div className="text-sm font-bold truncate">{slip.name}</div>
+                                                <div className="text-[10px] text-gray-400 truncate">
+                                                    {CUSTOMER_TYPE_LABELS[slip.state.customerType]} {slip.state.entryTime}
+                                                    {slip.state.dohan && ' 同伴'}
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <div className="text-xs font-mono">¥{result.currentTotal.toLocaleString()}</div>
+                                                <div className="text-sm font-bold font-mono text-[var(--gold-color)]">¥{closingResult?.totalPrice.toLocaleString() ?? '---'}</div>
                                             </div>
                                         </div>
-                                        <div className="flex gap-6 text-right">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs text-gray-400">現在</span>
-                                                <span className="text-lg font-mono">¥{result.currentTotal.toLocaleString()}</span>
+                                        <div className="flex gap-1 mt-1">
+                                            <button
+                                                onClick={() => setEditingKey(isEditing ? null : editKey)}
+                                                className={`px-2 py-1 rounded text-xs font-bold transition-all border cursor-pointer ${
+                                                    isEditing
+                                                        ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                                                        : 'bg-transparent text-[var(--gold-color)] border-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)]'
+                                                }`}
+                                            >{isEditing ? '閉じる' : '編集'}</button>
+                                            {onMoveSlip && (
+                                                <button
+                                                    onClick={() => setMovingSlipKey(movingSlipKey === editKey ? null : editKey)}
+                                                    className={`px-2 py-1 rounded text-xs font-bold transition-all border cursor-pointer ${
+                                                        movingSlipKey === editKey
+                                                            ? 'bg-blue-500 text-white border-blue-500'
+                                                            : 'bg-transparent text-blue-400 border-blue-400 hover:bg-[rgba(59,130,246,0.1)]'
+                                                    }`}
+                                                >{movingSlipKey === editKey ? 'キャンセル' : '移動'}</button>
+                                            )}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                            <div>
+                                                <div className="text-base font-bold">
+                                                    {slip.name}
+                                                    <span className="text-sm text-gray-400 font-normal ml-2">
+                                                        {CUSTOMER_TYPE_LABELS[slip.state.customerType]} | 入店 {slip.state.entryTime}
+                                                        {slip.state.dohan && ' | 同伴'}
+                                                        {slip.state.additionalNominationCount > 0 && ` | 複数指名+${slip.state.additionalNominationCount}`}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs text-[var(--accent-color)]">閉店</span>
-                                                <span className="text-xl font-bold font-mono text-[var(--gold-color)]">
-                                                    ¥{closingResult?.totalPrice.toLocaleString() ?? '---'}
-                                                </span>
+                                            <div className="flex gap-6 text-right">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-gray-400">現在</span>
+                                                    <span className="text-lg font-mono">¥{result.currentTotal.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-[var(--accent-color)]">閉店</span>
+                                                    <span className="text-xl font-bold font-mono text-[var(--gold-color)]">
+                                                        ¥{closingResult?.totalPrice.toLocaleString() ?? '---'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex gap-2 mt-2">
-                                        {onOpenSlip && (
+                                        <div className="flex gap-2 mt-2">
+                                            {onOpenSlip && (
+                                                <button
+                                                    onClick={() => onOpenSlip(table.id, slip.id)}
+                                                    className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer bg-transparent text-green-400 border-green-400 hover:bg-[rgba(74,222,128,0.1)]"
+                                                >開く</button>
+                                            )}
                                             <button
-                                                onClick={() => onOpenSlip(table.id, slip.id)}
-                                                className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer bg-transparent text-green-400 border-green-400 hover:bg-[rgba(74,222,128,0.1)]"
-                                            >◎ 開く</button>
-                                        )}
-                                        <button
-                                            onClick={() => setEditingKey(isEditing ? null : editKey)}
-                                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
-                                                isEditing
-                                                    ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
-                                                    : 'bg-transparent text-[var(--gold-color)] border-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)]'
-                                            }`}
-                                        >
-                                            {isEditing ? '✓ 閉じる' : '▹ 編集'}
-                                        </button>
-                                        {onMoveSlip && (
-                                            <button
-                                                onClick={() => setMovingSlipKey(movingSlipKey === editKey ? null : editKey)}
+                                                onClick={() => setEditingKey(isEditing ? null : editKey)}
                                                 className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
-                                                    movingSlipKey === editKey
-                                                        ? 'bg-blue-500 text-white border-blue-500'
-                                                        : 'bg-transparent text-blue-400 border-blue-400 hover:bg-[rgba(59,130,246,0.1)]'
+                                                    isEditing
+                                                        ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                                                        : 'bg-transparent text-[var(--gold-color)] border-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)]'
                                                 }`}
                                             >
-                                                {movingSlipKey === editKey ? '✕ キャンセル' : '↔ 移動'}
+                                                {isEditing ? '閉じる' : '編集'}
                                             </button>
-                                        )}
-                                    </div>
+                                            {onMoveSlip && (
+                                                <button
+                                                    onClick={() => setMovingSlipKey(movingSlipKey === editKey ? null : editKey)}
+                                                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer ${
+                                                        movingSlipKey === editKey
+                                                            ? 'bg-blue-500 text-white border-blue-500'
+                                                            : 'bg-transparent text-blue-400 border-blue-400 hover:bg-[rgba(59,130,246,0.1)]'
+                                                    }`}
+                                                >
+                                                    {movingSlipKey === editKey ? 'キャンセル' : '移動'}
+                                                </button>
+                                            )}
+                                        </div>
+                                      </>
+                                    )}
                                     {/* 伝票移動先選択 */}
                                     {movingSlipKey === editKey && onMoveSlip && (
                                         <div className="mt-2 p-3 rounded-lg bg-[rgba(59,130,246,0.08)] border border-blue-500/30">

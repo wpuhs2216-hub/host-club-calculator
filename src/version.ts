@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.6.3';
+export const APP_VERSION = '2.0.0';
 
 export type VersionEntry = {
   version: string;
@@ -7,9 +7,14 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
-    version: '1.6.3',
+    version: '2.0.0',
     notes: [
+      'サイドバー全卓会計のレイアウトをコンパクト化（狭い画面でも崩れない）',
+      '伝票名タップで直接開く（開くボタン・記号を削除）',
+      '編集/移動ボタンのサイズを縮小',
       'サイドバー常時表示時に右下に料金ウィジェットを常時表示',
+      'サイドバー常時表示が全端末対応（画面幅に依存しない）',
+      'サイドバー幅をレスポンシブ化',
     ],
   },
   {

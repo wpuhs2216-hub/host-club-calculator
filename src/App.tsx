@@ -204,7 +204,7 @@ function App() {
         {/* 全卓会計（サイドバーモード時） */}
         {showLO && loDisplayMode === 'sidebar' && (
           <div className="border-t border-[var(--border-color)] pt-3 mt-1">
-            <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip}
+            <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip} compact
               onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })}
               onClearAllSlips={() => multiDispatch({ type: 'CLEAR_ALL_SLIPS' })}
               onOpenSlip={(tableId, slipId) => { setActiveTable(tableId); setActiveSlip(slipId); setCurrentPage('calculator'); setShowMobileSidebar(false); }} />
