@@ -33,15 +33,15 @@ function useIsTablet() {
   return isTablet;
 }
 
-function useSwipeSidebar(isTablet: boolean, showMobileSidebar: boolean, setShowMobileSidebar: (v: boolean) => void) {
+function useSwipeSidebar(sidebarPinned: boolean, showMobileSidebar: boolean, setShowMobileSidebar: (v: boolean) => void) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (isTablet) return;
+    if (sidebarPinned) return;
     const t = e.touches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
-  }, [isTablet]);
+  }, [sidebarPinned]);
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (isTablet || !touchStart.current) return;
+    if (sidebarPinned || !touchStart.current) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
@@ -49,7 +49,7 @@ function useSwipeSidebar(isTablet: boolean, showMobileSidebar: boolean, setShowM
     if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
     if (dx > 0 && !showMobileSidebar) setShowMobileSidebar(true);
     if (dx < 0 && showMobileSidebar) setShowMobileSidebar(false);
-  }, [isTablet, showMobileSidebar, setShowMobileSidebar]);
+  }, [sidebarPinned, showMobileSidebar, setShowMobileSidebar]);
   useEffect(() => {
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });
@@ -80,9 +80,6 @@ function App() {
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
-  // スワイプでサイドバー開閉
-  useSwipeSidebar(isTablet, showMobileSidebar, setShowMobileSidebar);
-
   // UI設定の永続化
   const loadUISetting = (key: string, fallback: string) => {
     try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
@@ -95,11 +92,19 @@ function App() {
   const [showAIDetail, setShowAIDetail] = useState(() => loadUIBool('ui-showAIDetail', false));
   const [lightMode, setLightMode] = useState(() => loadUIBool('ui-lightMode', false));
   const [loDisplayMode, setLoDisplayMode] = useState<LODisplayMode>(() => loadUISetting('ui-loDisplayMode', 'sidebar') as LODisplayMode);
+  const [sidebarPinned, setSidebarPinned] = useState(() => loadUIBool('ui-sidebarPinned', true));
 
   const persistShowLO = (v: boolean) => { setShowLO(v); localStorage.setItem('ui-showLO', String(v)); };
   const persistAIDetail = (v: boolean) => { setShowAIDetail(v); localStorage.setItem('ui-showAIDetail', String(v)); };
   const persistLightMode = (v: boolean) => { setLightMode(v); localStorage.setItem('ui-lightMode', String(v)); };
   const persistLoDisplayMode = (v: LODisplayMode) => { setLoDisplayMode(v); localStorage.setItem('ui-loDisplayMode', v); };
+  const persistSidebarPinned = (v: boolean) => { setSidebarPinned(v); localStorage.setItem('ui-sidebarPinned', String(v)); };
+
+  // タブレットかつサイドバー固定ON → 常時表示
+  const sidebarVisible = isTablet && sidebarPinned;
+
+  // スワイプでサイドバー開閉
+  useSwipeSidebar(sidebarVisible, showMobileSidebar, setShowMobileSidebar);
 
   useEffect(() => { document.documentElement.classList.toggle('light-mode', lightMode); }, [lightMode]);
 
@@ -149,11 +154,11 @@ function App() {
     <div className="flex flex-col h-full">
       {/* サイドバーヘッダー — モバイルではsafe-area + ☰ボタン分の余白 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0"
-        style={{ paddingTop: isTablet ? undefined : 'calc(max(0.75rem, env(safe-area-inset-top, 0px)) + 2.5rem)' }}>
+        style={{ paddingTop: sidebarVisible ? undefined : 'calc(max(0.75rem, env(safe-area-inset-top, 0px)) + 2.5rem)' }}>
         <span className="text-sm font-bold text-[var(--gold-color)]">
           {showLO ? 'テーブル / 伝票' : '伝票'}
         </span>
-        {!isTablet && (
+        {!sidebarVisible && (
           <button onClick={() => setShowMobileSidebar(false)}
             className="w-8 h-8 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] flex items-center justify-center text-sm cursor-pointer hover:border-[var(--gold-color)] transition-colors">✕</button>
         )}
@@ -245,8 +250,8 @@ function App() {
 
   return (
     <Layout storeName={config.storeName}>
-      {/* サイドバー開閉ボタン（左上固定） — モバイルのみ */}
-      {!isTablet && (
+      {/* サイドバー開閉ボタン（左上固定） — サイドバー非固定時のみ */}
+      {!sidebarVisible && (
         <button
           onClick={() => setShowMobileSidebar(!showMobileSidebar)}
           style={{ top: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}
@@ -273,16 +278,16 @@ function App() {
       )}
 
       {/* メインコンテンツ */}
-      <div className={isTablet ? 'flex gap-4' : ''}>
-        {/* タブレット: 常時表示サイドバー（LO埋め込み時は幅広） */}
-        {isTablet && (
+      <div className={sidebarVisible ? 'flex gap-4' : ''}>
+        {/* 固定サイドバー（LO埋め込み時は幅広） */}
+        {sidebarVisible && (
           <div className={`${showLO && loDisplayMode === 'sidebar' ? 'w-[420px]' : 'w-60'} shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]`}>
             {sidebarContent}
           </div>
         )}
 
-        {/* モバイル: ドロワーサイドバー（全ページで開ける） */}
-        {!isTablet && showMobileSidebar && (
+        {/* ドロワーサイドバー（サイドバー非固定時） */}
+        {!sidebarVisible && showMobileSidebar && (
           <div className="fixed inset-0 z-[900] flex">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileSidebar(false)} />
             <div className={`relative ${showLO && loDisplayMode === 'sidebar' ? 'w-[90vw]' : 'w-72 max-w-[80vw]'} h-full bg-[var(--card-bg,#111827)] border-r border-[var(--border-color)] shadow-2xl animate-slide-in-left overflow-hidden`}>
@@ -296,8 +301,8 @@ function App() {
           {/* 計算ページ */}
           {currentPage === 'calculator' && (
             <div className="flex flex-col gap-4">
-              {/* モバイル: コンパクト伝票セレクター */}
-              {!isTablet && (
+              {/* コンパクト伝票セレクター（サイドバー非固定時） */}
+              {!sidebarVisible && (
                 <div className="flex gap-2 overflow-x-auto items-center" style={{ scrollbarWidth: 'none' }}>
                   {activeTable.slips.map(slip => (
                     <button key={slip.id} onClick={() => setActiveSlip(slip.id)}
@@ -394,6 +399,8 @@ function App() {
               onShowAIDetailChange={persistAIDetail}
               loDisplayMode={loDisplayMode}
               onLoDisplayModeChange={persistLoDisplayMode}
+              sidebarPinned={sidebarPinned}
+              onSidebarPinnedChange={persistSidebarPinned}
             />
           )}
         </div>

@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.6.0';
+export const APP_VERSION = '1.6.1';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,13 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.6.1',
+    notes: [
+      'サイドバー固定ON/OFF設定を追加（設定 > 機能表示）',
+      'タブレットでサイドバーが常時表示されない問題を修正',
+    ],
+  },
   {
     version: '1.6.0',
     notes: [

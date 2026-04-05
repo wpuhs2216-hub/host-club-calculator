@@ -22,12 +22,14 @@ interface SettingsPageProps {
     onShowAIDetailChange: (v: boolean) => void;
     loDisplayMode?: 'sidebar' | 'tab';
     onLoDisplayModeChange?: (v: 'sidebar' | 'tab') => void;
+    sidebarPinned: boolean;
+    onSidebarPinnedChange: (v: boolean) => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
     isDebugMode, currentTime, onDebugModeToggle, onCurrentTimeChange,
     showLO, onShowLOChange, showAIDetail, onShowAIDetailChange,
-    loDisplayMode, onLoDisplayModeChange,
+    loDisplayMode, onLoDisplayModeChange, sidebarPinned, onSidebarPinnedChange,
 }) => {
     const { config, registry, setActiveStore, updateStoreConfig, addStore, deleteStore } = useStoreConfig();
     const [activeTab, setActiveTab] = useState<SettingsTab>('store');
@@ -139,6 +141,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
                                 <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">機能表示</h3>
                                 <ToggleRow label="運営モード" checked={showLO} onChange={onShowLOChange} />
+                                <ToggleRow label="サイドバー固定（タブレット）" checked={sidebarPinned} onChange={onSidebarPinnedChange} />
                                 <ToggleRow label="AI予算プランナーの詳細表示" checked={showAIDetail} onChange={onShowAIDetailChange} />
                                 {showLO && onLoDisplayModeChange && (
                                     <div className="mt-2">
