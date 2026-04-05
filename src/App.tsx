@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
 import type { Action } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
-import { NewSlipDialog } from './components/NewSlipDialog';
+import { NewSlipDialog, NewSlipInline } from './components/NewSlipDialog';
 import { SlipTabView } from './components/SlipTabView';
 import { OrderDialog } from './components/OrderDialog';
 import { SlipCopyModal } from './components/SlipCopyModal';
@@ -73,11 +73,6 @@ function App() {
 
   useEffect(() => { document.documentElement.classList.toggle('light-mode', lightMode); }, [lightMode]);
 
-  // 通常モード: 伝票がなければダイアログを自動表示
-  useEffect(() => {
-    if (!showLO && activeTable.slips.length === 0) setShowNewSlipDialog(true);
-  }, [showLO, activeTable.slips.length]);
-
   const timeOverrideRef = useRef(false);
   useEffect(() => {
     const updateTime = () => {
@@ -142,7 +137,7 @@ function App() {
                 const isActive = activeTableId === table.id;
                 const hasSlips = table.slips.length > 0;
                 return (
-                  <button key={table.id} onClick={() => setActiveTable(table.id)}
+                  <button key={table.id} onClick={() => { setActiveTable(table.id); if (currentPage !== 'calculator') setCurrentPage('calculator'); setShowMobileSidebar(false); }}
                     className={`p-2 rounded-lg border text-center transition-colors ${
                       isActive
                         ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
@@ -278,9 +273,11 @@ function App() {
                         activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
                       }`}>{slip.name}</button>
                   ))}
-                  <button onClick={() => setShowNewSlipDialog(true)}
-                    className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer whitespace-nowrap shrink-0"
-                  >+</button>
+                  {activeTable.slips.length > 0 && (
+                    <button onClick={() => setShowNewSlipDialog(true)}
+                      className="px-3 py-1.5 rounded-md bg-transparent border border-dashed border-[var(--gold-color)] text-[var(--gold-color)] hover:bg-[rgba(255,215,0,0.1)] transition-colors text-sm font-bold cursor-pointer whitespace-nowrap shrink-0"
+                    >+</button>
+                  )}
                   {showLO && (
                     <span className="text-xs text-gray-400 shrink-0 font-bold">{activeTable.name}</span>
                   )}
@@ -332,10 +329,17 @@ function App() {
                   />
                 </>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="text-4xl mb-4">◎</div>
-                  <div className="text-lg mb-2">テーブル <span className="text-[var(--gold-color)] font-bold">{activeTable.name}</span></div>
-                  <div className="text-sm">「+ 伝票追加」で伝票入力を開始</div>
+                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
+                  <NewSlipInline
+                    onCreate={(data) => {
+                      const { tableId, ...slipData } = data;
+                      if (tableId) setActiveTable(tableId);
+                      addSlipWithData(slipData, tableId);
+                    }}
+                    tables={showLO ? tables.map(t => ({ id: t.id, name: t.name })) : undefined}
+                    activeTableId={activeTableId}
+                    tableName={showLO ? activeTable.name : undefined}
+                  />
                 </div>
               )}
             </div>
