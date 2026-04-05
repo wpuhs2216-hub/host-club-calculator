@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { BreakdownItem, PriceScheduleItem } from '../hooks/useCalculator';
+import { ButtonTimePicker } from './ButtonTimePicker';
 
 interface ResultDisplayProps {
     currentTotal: number;
@@ -16,56 +17,55 @@ interface ResultDisplayProps {
 export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, breakdown, previousTotal, previousBreakdown, schedule, currentTime, isOutOfHours, onTimeOverride }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
     const [showPrevious, setShowPrevious] = useState(false);
+    const [showBreakdown, setShowBreakdown] = useState(false);
     const [isEditingTime, setIsEditingTime] = useState(false);
 
-    const toggleExpand = (index: number) => {
-        setExpandedIndex(expandedIndex === index ? null : index);
-    };
+    // ButtonTimePicker表示中は他を隠す
+    if (isEditingTime) {
+        return (
+            <div className="bg-[rgba(0,10,20,0.8)] rounded-xl p-5 border border-[var(--accent-color)] shadow-[0_0_30px_rgba(0,188,212,0.08)]">
+                <div className="text-sm text-gray-400 mb-3 text-center">会計時刻を設定</div>
+                <ButtonTimePicker
+                    value={currentTime}
+                    onChange={(time) => {
+                        onTimeOverride?.(time);
+                        setIsEditingTime(false);
+                    }}
+                    onCancel={() => { setIsEditingTime(false); onTimeOverride?.(null); }}
+                />
+            </div>
+        );
+    }
 
     return (
-        <div className="bg-[rgba(0,10,20,0.8)] rounded-xl p-5 mt-5 border border-[var(--accent-color)] shadow-[0_0_30px_rgba(0,188,212,0.08)]">
-            {/* 合計表示 */}
-            <div className="text-center mb-4">
-                <div className="text-lg font-bold text-white mb-2">
-                    {isOutOfHours ? '１時間分の料金' : isEditingTime ? (
-                        <div className="flex items-center justify-center gap-2">
-                            <span className="text-sm text-gray-400">会計時刻:</span>
-                            <input
-                                type="time"
-                                value={currentTime}
-                                onChange={(e) => onTimeOverride?.(e.target.value)}
-                                autoFocus
-                                className="bg-[var(--input-bg)] border border-[var(--accent-color)] rounded-md px-2 py-1 text-white text-base outline-none [color-scheme:dark] w-28"
-                            />
-                            <button
-                                onClick={() => { setIsEditingTime(false); onTimeOverride?.(null); }}
-                                className="text-gray-400 hover:text-white text-sm cursor-pointer bg-transparent border-none"
-                            >✕</button>
-                        </div>
-                    ) : (
+        <div className="bg-[rgba(0,10,20,0.8)] rounded-xl p-4 border border-[var(--accent-color)] shadow-[0_0_30px_rgba(0,188,212,0.08)]">
+            {/* 時刻 + 合計 */}
+            <div className="text-center mb-3">
+                <div className="text-xs text-gray-400 mb-1">
+                    {isOutOfHours ? '営業時間外（1時間分）' : (
                         <span className="cursor-pointer hover:text-[var(--accent-color)] transition-colors" onClick={() => setIsEditingTime(true)}>
-                            現在時刻: {currentTime}
+                            {currentTime} ✎
                         </span>
                     )}
                 </div>
-                <div className="text-sm text-gray-400">現在のお会計 (税込)</div>
-                <div className="text-4xl font-bold text-[var(--accent-color)] mt-1">
+                <div className="text-4xl font-bold text-[var(--accent-color)]">
                     ¥{currentTotal.toLocaleString()}
                 </div>
+                <div className="text-[0.7rem] text-gray-500 mt-0.5">現在のお会計 (税込)</div>
             </div>
 
-            {/* ワンセット前の料金 */}
+            {/* 前セット（1行インライン） */}
             {previousTotal !== null && previousBreakdown && (
-                <div className="border-t border-gray-700 pt-3 mb-3">
+                <div className="border-t border-gray-700/50 py-2">
                     <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowPrevious(!showPrevious)}>
-                        <h4 className="text-sm text-gray-400">1つ前のセット料金 (税込)</h4>
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-yellow-400">¥{previousTotal.toLocaleString()}</span>
-                            <span className="text-[0.7rem] text-gray-500">{showPrevious ? '▲' : '▼'}</span>
+                        <span className="text-xs text-gray-400">1つ前</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-bold text-yellow-400">¥{previousTotal.toLocaleString()}</span>
+                            <span className="text-[0.6rem] text-gray-500">{showPrevious ? '▲' : '▼'}</span>
                         </div>
                     </div>
                     {showPrevious && (
-                        <div className="mt-2 bg-[rgba(255,255,255,0.03)] rounded-lg p-3">
+                        <div className="mt-2 bg-[rgba(255,255,255,0.03)] rounded-lg p-2">
                             {previousBreakdown.map((item, index) => (
                                 <BreakdownRow key={index} label={item.label} amount={item.amount} isTotal={item.isTotal} note={item.note} />
                             ))}
@@ -74,60 +74,54 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ currentTotal, brea
                 </div>
             )}
 
-            {/* 詳細内訳 */}
-            <div className="border-t border-gray-700 pt-4 mb-5">
-                <h4 className="text-sm text-gray-400 mb-3">詳細内訳</h4>
-                {breakdown.map((item, index) => (
-                    <BreakdownRow key={index} label={item.label} amount={item.amount} isTotal={item.isTotal} note={item.note} />
-                ))}
+            {/* 内訳（折りたたみ） */}
+            <div className="border-t border-gray-700/50 py-2">
+                <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowBreakdown(!showBreakdown)}>
+                    <span className="text-xs text-gray-400">内訳</span>
+                    <span className="text-[0.6rem] text-gray-500">{showBreakdown ? '▲' : '▼'}</span>
+                </div>
+                {showBreakdown && (
+                    <div className="mt-2 bg-[rgba(255,255,255,0.03)] rounded-lg p-2">
+                        {breakdown.map((item, index) => (
+                            <BreakdownRow key={index} label={item.label} amount={item.amount} isTotal={item.isTotal} note={item.note} />
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* 料金スケジュール */}
-            <div className="border-t border-gray-700 pt-4">
-                <h4 className="text-sm text-gray-400 mb-3">料金スケジュール（タップで内訳表示）</h4>
-                <table className="w-full border-collapse text-sm">
-                    <thead>
-                        <tr className="text-gray-400 border-b border-gray-600">
-                            <th className="text-left p-2">時間</th>
-                            <th className="text-right p-2">合計金額 (税込)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {schedule.map((item, index) => (
+            {/* 料金スケジュール（コンパクト） */}
+            <div className="border-t border-gray-700/50 pt-2">
+                <div className="text-xs text-gray-400 mb-2">料金スケジュール</div>
+                <div className="flex flex-col">
+                    {schedule.map((item, index) => {
+                        const isExpanded = expandedIndex === index;
+                        return (
                             <React.Fragment key={index}>
-                                <tr
-                                    onClick={() => toggleExpand(index)}
-                                    className={`cursor-pointer transition-colors ${
-                                        expandedIndex === index
-                                            ? 'bg-[rgba(255,215,0,0.08)]'
-                                            : 'hover:bg-[rgba(255,255,255,0.03)] border-b border-gray-800'
+                                <div
+                                    onClick={() => setExpandedIndex(isExpanded ? null : index)}
+                                    className={`flex justify-between items-center py-1.5 px-1 cursor-pointer rounded transition-colors text-sm ${
+                                        isExpanded ? 'bg-[rgba(255,215,0,0.08)]' : 'hover:bg-[rgba(255,255,255,0.03)]'
                                     }`}
                                 >
-                                    <td className="p-2 text-white">
+                                    <span className="text-gray-300 text-xs">
                                         〜{item.timeLimit}
-                                        <span className="text-[0.7rem] text-gray-500 ml-1.5">
-                                            {expandedIndex === index ? '▲' : '▼'}
-                                        </span>
-                                    </td>
-                                    <td className="p-2 text-right text-[var(--accent-color)] font-bold">
+                                        <span className="text-[0.6rem] text-gray-600 ml-1">{isExpanded ? '▲' : '▼'}</span>
+                                    </span>
+                                    <span className="text-[var(--accent-color)] font-bold text-sm">
                                         ¥{item.totalPrice.toLocaleString()}
-                                    </td>
-                                </tr>
-                                {expandedIndex === index && (
-                                    <tr>
-                                        <td colSpan={2} className="px-2 pb-3 pl-4">
-                                            <div className="bg-[rgba(255,255,255,0.03)] rounded-lg p-3 border-b border-gray-800">
-                                                {item.breakdown.map((b, bi) => (
-                                                    <BreakdownRow key={bi} label={b.label} amount={b.amount} isTotal={b.isTotal} note={b.note} />
-                                                ))}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    </span>
+                                </div>
+                                {isExpanded && (
+                                    <div className="bg-[rgba(255,255,255,0.03)] rounded-lg p-2 mb-1 ml-2">
+                                        {item.breakdown.map((b, bi) => (
+                                            <BreakdownRow key={bi} label={b.label} amount={b.amount} isTotal={b.isTotal} note={b.note} />
+                                        ))}
+                                    </div>
                                 )}
                             </React.Fragment>
-                        ))}
-                    </tbody>
-                </table>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -137,12 +131,12 @@ const BreakdownRow: React.FC<{ label: string; amount: number; isTotal?: boolean;
     if (amount === 0 && !isTotal && !label.includes('セット')) return null;
 
     return (
-        <div className={`flex justify-between items-center mb-2 text-[0.85rem] ${
-            isTotal ? 'text-white font-bold border-t border-gray-600 pt-1.5' : 'text-gray-300'
+        <div className={`flex justify-between items-center mb-1 text-xs ${
+            isTotal ? 'text-white font-bold border-t border-gray-600 pt-1' : 'text-gray-300'
         }`}>
             <div>
                 {label}
-                {note && <span className="text-[0.7rem] text-gray-500 ml-1.5">{note}</span>}
+                {note && <span className="text-[0.6rem] text-gray-500 ml-1">{note}</span>}
             </div>
             <div>¥{amount.toLocaleString()}</div>
         </div>

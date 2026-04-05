@@ -5,6 +5,7 @@ import { PricingSettings } from './settings/PricingSettings';
 import { MenuSettings } from './settings/MenuSettings';
 import { RulesSettings } from './settings/RulesSettings';
 import { TableSettings } from './settings/TableSettings';
+import { VERSION_HISTORY } from '../version';
 
 const ADMIN_PASSWORD = 'diva3030';
 
@@ -30,6 +31,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
     const [passwordError, setPasswordError] = useState(false);
+    const [expandedVersion, setExpandedVersion] = useState<string | null>(VERSION_HISTORY[0]?.version ?? null);
 
     const handleUnlock = () => {
         if (passwordInput === ADMIN_PASSWORD) {
@@ -52,9 +54,30 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     return (
         <div className="flex flex-col gap-4">
             <h2 className="text-xl font-bold text-[var(--gold-color)] flex items-center gap-2">
-                ◉ 管理者モード
+                ◉ 設定
             </h2>
 
+            {/* 店舗切替（パスワード不要） */}
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
+                <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">店舗切替</h3>
+                <div className="flex gap-2 flex-wrap">
+                    {registry.stores.map(store => (
+                        <button
+                            key={store.id}
+                            onClick={() => setActiveStore(store.id)}
+                            className={`px-4 py-2.5 rounded-lg font-bold text-sm transition-all border cursor-pointer ${
+                                store.id === config.id
+                                    ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                                    : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:border-gray-400'
+                            }`}
+                        >
+                            {store.storeName}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* 管理者モード */}
             {!isUnlocked ? (
                 <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-6">
                     <div className="text-center mb-4">
@@ -110,14 +133,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     )}
                     {activeTab === 'debug' && (
                         <div className="flex flex-col gap-4">
-                            {/* 機能表示設定 */}
                             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
                                 <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">機能表示</h3>
                                 <ToggleRow label="運営モード" checked={showLO} onChange={onShowLOChange} />
                                 <ToggleRow label="AI予算プランナーの詳細表示" checked={showAIDetail} onChange={onShowAIDetailChange} />
                             </div>
-
-                            {/* 時間指定 */}
                             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
                                 <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">時間設定</h3>
                                 <ToggleRow label="時間指定モード" checked={isDebugMode ?? false} onChange={() => onDebugModeToggle?.()} />
@@ -139,6 +159,37 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </button>
                 </>
             )}
+
+            {/* アップデート履歴（パスワード不要） */}
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
+                <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">アップデート履歴</h3>
+                <div className="flex flex-col gap-1">
+                    {VERSION_HISTORY.map((entry) => {
+                        const isExpanded = expandedVersion === entry.version;
+                        return (
+                            <div key={entry.version}>
+                                <div
+                                    className="flex justify-between items-center cursor-pointer py-2 px-2 rounded-lg hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+                                    onClick={() => setExpandedVersion(isExpanded ? null : entry.version)}
+                                >
+                                    <span className="text-sm font-bold text-gray-300">v{entry.version}</span>
+                                    <span className="text-[0.6rem] text-gray-500">{isExpanded ? '▲' : '▼'}</span>
+                                </div>
+                                {isExpanded && (
+                                    <ul className="pl-4 pb-2 space-y-1">
+                                        {entry.notes.map((note, i) => (
+                                            <li key={i} className="text-xs text-gray-400 flex items-start gap-1.5">
+                                                <span className="text-[var(--gold-color)] mt-0.5 shrink-0">•</span>
+                                                <span>{note}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 };

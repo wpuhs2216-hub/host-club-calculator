@@ -21,9 +21,9 @@ interface SlipTabViewProps {
 
 const TABS: { id: SlipTab; label: string }[] = [
   { id: 'basic', label: '基本情報' },
-  { id: 'orders', label: '単価もの' },
+  { id: 'orders', label: 'オーダー' },
   { id: 'checkout', label: '会計' },
-  { id: 'ai', label: 'AI' },
+  { id: 'ai', label: '予算' },
 ];
 
 export const SlipTabView: React.FC<SlipTabViewProps> = ({

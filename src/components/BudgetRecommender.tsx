@@ -247,6 +247,12 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
 
     return (
         <div>
+            {/* 説明文 */}
+            <div className="mb-4 p-3 rounded-lg bg-[rgba(0,188,212,0.05)] border border-[var(--border-color)]">
+                <div className="text-sm font-bold text-[var(--text-color)] mb-1">予算に対しての最適な注文内容をAIが自動計算します。</div>
+                <div className="text-xs text-gray-400">予算と退店時間を設定してください。</div>
+            </div>
+
             {/* サマリ */}
             <div className="flex justify-between items-center mb-4 p-3 rounded-lg bg-[rgba(255,215,0,0.05)] border border-[var(--border-color)]">
                 <div>
