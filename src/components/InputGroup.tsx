@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { CustomerType } from '../hooks/useCalculator';
 import { Collapsible } from './Collapsible';
+import { ButtonTimePicker } from './ButtonTimePicker';
 
 type MainCategory = 'initial' | 'r' | 'regular';
 
@@ -156,6 +158,7 @@ export const InputGroup: React.FC<InputGroupProps> = ({
                 label="入店時間"
                 value={entryTime}
                 onChange={onEntryTimeChange}
+                displayFormat
             />
 
             <Toggle
@@ -226,21 +229,39 @@ interface TimeInputProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
+    displayFormat?: boolean;
 }
 
 export const TimeInput: React.FC<TimeInputProps> = ({ label, value, onChange }) => {
+    const [isEditing, setIsEditing] = useState(false);
+
+    if (isEditing) {
+        return (
+            <div className="mb-4">
+                <ButtonTimePicker
+                    label={label}
+                    value={value}
+                    onChange={(time) => {
+                        onChange(time);
+                        setIsEditing(false);
+                    }}
+                    onCancel={() => setIsEditing(false)}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="mb-4">
             <label className="block mb-2 font-bold text-[var(--gold-color)]">
                 {label}
             </label>
-            <input
-                type="time"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
-                className="p-3 rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] text-white text-base outline-none focus:border-[var(--gold-color)] transition-colors [color-scheme:dark]"
-            />
+            <button
+                onClick={() => setIsEditing(true)}
+                className="w-full p-3 rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] text-white text-base text-left outline-none cursor-pointer hover:border-[var(--gold-color)] transition-colors font-mono tracking-wider"
+            >
+                {value || '--:--'}
+            </button>
         </div>
     );
 };
