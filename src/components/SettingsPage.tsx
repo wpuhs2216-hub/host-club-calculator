@@ -20,11 +20,14 @@ interface SettingsPageProps {
     onShowLOChange: (v: boolean) => void;
     showAIDetail: boolean;
     onShowAIDetailChange: (v: boolean) => void;
+    loDisplayMode?: 'sidebar' | 'tab';
+    onLoDisplayModeChange?: (v: 'sidebar' | 'tab') => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
     isDebugMode, currentTime, onDebugModeToggle, onCurrentTimeChange,
     showLO, onShowLOChange, showAIDetail, onShowAIDetailChange,
+    loDisplayMode, onLoDisplayModeChange,
 }) => {
     const { config, registry, setActiveStore, updateStoreConfig, addStore, deleteStore } = useStoreConfig();
     const [activeTab, setActiveTab] = useState<SettingsTab>('store');
@@ -137,6 +140,25 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">機能表示</h3>
                                 <ToggleRow label="運営モード" checked={showLO} onChange={onShowLOChange} />
                                 <ToggleRow label="AI予算プランナーの詳細表示" checked={showAIDetail} onChange={onShowAIDetailChange} />
+                                {showLO && onLoDisplayModeChange && (
+                                    <div className="mt-2">
+                                        <label className="block mb-2 text-sm text-gray-400">LO一覧の表示方法</label>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => onLoDisplayModeChange('sidebar')}
+                                                className={`flex-1 py-2.5 rounded-lg text-sm font-bold border transition-colors cursor-pointer ${
+                                                    loDisplayMode === 'sidebar' ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-[var(--input-bg)] text-white border-[var(--border-color)]'
+                                                }`}
+                                            >サイドバー</button>
+                                            <button
+                                                onClick={() => onLoDisplayModeChange('tab')}
+                                                className={`flex-1 py-2.5 rounded-lg text-sm font-bold border transition-colors cursor-pointer ${
+                                                    loDisplayMode === 'tab' ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-[var(--input-bg)] text-white border-[var(--border-color)]'
+                                                }`}
+                                            >タブ表示</button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
                                 <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">時間設定</h3>

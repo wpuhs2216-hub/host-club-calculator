@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.4.1';
+export const APP_VERSION = '1.5.0';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,15 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '1.5.0',
+    notes: [
+      'LO一覧をサイドバーに統合（テーブル毎の金額一覧を表示）',
+      'LO表示モード切替（サイドバー/タブ）を設定に追加',
+      'サイドバー上部と☰ボタンの重なり修正',
+      '設定画面でもサイドバーを開けるように修正',
+    ],
+  },
   {
     version: '1.4.1',
     notes: [

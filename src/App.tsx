@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { useMultiTableCalculator } from './hooks/useMultiTableCalculator';
 import type { Action } from './hooks/useCalculator';
+import { calculateResult } from './hooks/useCalculator';
 import { Layout } from './components/Layout';
 import { NewSlipDialog } from './components/NewSlipDialog';
 import { SlipTabView } from './components/SlipTabView';
@@ -15,15 +16,17 @@ import { useStoreConfig } from './contexts/StoreConfigContext';
 import { APP_VERSION } from './version';
 
 type PageTab = 'calculator' | 'lo' | 'settings';
+type LODisplayMode = 'sidebar' | 'tab';
 
-// PWA即時更新: 新しいSWが検出されたら自動リロード
+const CUSTOMER_TYPE_SHORT: Record<string, string> = {
+  initial: '新規', r_within: 'R(有)', r_after: 'R(無)', regular: '正規',
+};
+
+// PWA即時更新
 const updateSW = registerSW({
-  onNeedRefresh() {
-    updateSW(true);
-  },
+  onNeedRefresh() { updateSW(true); },
 });
 
-// タブレット判定フック
 function useIsTablet() {
   const [isTablet, setIsTablet] = useState(() => window.matchMedia('(min-width: 768px)').matches);
   useEffect(() => {
@@ -46,9 +49,7 @@ function App() {
 
   // アップデート通知
   const [showUpdateNotice, setShowUpdateNotice] = useState(() => {
-    try {
-      return localStorage.getItem('app-version') !== APP_VERSION;
-    } catch { return false; }
+    try { return localStorage.getItem('app-version') !== APP_VERSION; } catch { return false; }
   });
 
   // モーダル
@@ -58,34 +59,31 @@ function App() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // UI設定の永続化
-  const loadUISetting = (key: string, fallback: boolean) => {
+  const loadUISetting = (key: string, fallback: string) => {
+    try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+  };
+  const loadUIBool = (key: string, fallback: boolean) => {
     try { const v = localStorage.getItem(key); return v !== null ? v === 'true' : fallback; } catch { return fallback; }
   };
   const [currentPage, setCurrentPage] = useState<PageTab>('calculator');
-  const [showLO, setShowLO] = useState(() => loadUISetting('ui-showLO', false));
-  const [showAIDetail, setShowAIDetail] = useState(() => loadUISetting('ui-showAIDetail', false));
-  const [lightMode, setLightMode] = useState(() => loadUISetting('ui-lightMode', false));
+  const [showLO, setShowLO] = useState(() => loadUIBool('ui-showLO', false));
+  const [showAIDetail, setShowAIDetail] = useState(() => loadUIBool('ui-showAIDetail', false));
+  const [lightMode, setLightMode] = useState(() => loadUIBool('ui-lightMode', false));
+  const [loDisplayMode, setLoDisplayMode] = useState<LODisplayMode>(() => loadUISetting('ui-loDisplayMode', 'sidebar') as LODisplayMode);
 
   const persistShowLO = (v: boolean) => { setShowLO(v); localStorage.setItem('ui-showLO', String(v)); };
   const persistAIDetail = (v: boolean) => { setShowAIDetail(v); localStorage.setItem('ui-showAIDetail', String(v)); };
   const persistLightMode = (v: boolean) => { setLightMode(v); localStorage.setItem('ui-lightMode', String(v)); };
+  const persistLoDisplayMode = (v: LODisplayMode) => { setLoDisplayMode(v); localStorage.setItem('ui-loDisplayMode', v); };
 
-  // ライトモード切替
-  useEffect(() => {
-    document.documentElement.classList.toggle('light-mode', lightMode);
-  }, [lightMode]);
+  useEffect(() => { document.documentElement.classList.toggle('light-mode', lightMode); }, [lightMode]);
 
   // 通常モード: 伝票がなければダイアログを自動表示
   useEffect(() => {
-    if (!showLO && activeTable.slips.length === 0) {
-      setShowNewSlipDialog(true);
-    }
+    if (!showLO && activeTable.slips.length === 0) setShowNewSlipDialog(true);
   }, [showLO, activeTable.slips.length]);
 
-  // 時刻オーバーライド管理（会計時刻タップ入力用）
   const timeOverrideRef = useRef(false);
-
-  // 現在時刻の自動更新（10秒間隔、全伝票一括）
   useEffect(() => {
     const updateTime = () => {
       if (timeOverrideRef.current) return;
@@ -105,12 +103,9 @@ function App() {
     dispatch({ type: 'ADD_ORDER', payload: { name, price, isTaxIncluded, canHalfOff, isHalfOff } });
   };
 
-  // コピー用のスリップ情報を構築
   const buildCopySlips = (): CopySlipInfo[] => {
     if (showLO) {
-      return tables.flatMap(t =>
-        t.slips.map(s => ({ id: s.id, name: s.name, tableId: t.id, tableName: t.name, state: s.state }))
-      );
+      return tables.flatMap(t => t.slips.map(s => ({ id: s.id, name: s.name, tableId: t.id, tableName: t.name, state: s.state })));
     }
     return activeTable.slips.map(s => ({ id: s.id, name: s.name, state: s.state }));
   };
@@ -124,16 +119,18 @@ function App() {
     multiDispatch({ type: 'SLIP_ACTION_FOR', payload: { tableId, slipId, action } });
   };
 
-  // --- サイドバーコンテンツ（共通） ---
+  // LOをタブで表示するか
+  const loAsTab = showLO && loDisplayMode === 'tab';
+
+  // --- サイドバーコンテンツ ---
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* サイドバーヘッダー */}
+      {/* サイドバーヘッダー — モバイルではsafe-area + ☰ボタン分の余白 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0"
-        style={{ paddingTop: isTablet ? undefined : 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
+        style={{ paddingTop: isTablet ? undefined : 'calc(max(0.75rem, env(safe-area-inset-top, 0px)) + 2.5rem)' }}>
         <span className="text-sm font-bold text-[var(--gold-color)]">
           {showLO ? 'テーブル / 伝票' : '伝票'}
         </span>
-        {/* モバイルのみ閉じるボタン */}
         {!isTablet && (
           <button onClick={() => setShowMobileSidebar(false)}
             className="w-8 h-8 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-color)] flex items-center justify-center text-sm cursor-pointer hover:border-[var(--gold-color)] transition-colors">✕</button>
@@ -171,7 +168,7 @@ function App() {
         <label className="text-xs text-gray-400 block">伝票</label>
         <div className="flex flex-col gap-1.5">
           {activeTable.slips.map(slip => (
-            <button key={slip.id} onClick={() => { setActiveSlip(slip.id); setShowMobileSidebar(false); }}
+            <button key={slip.id} onClick={() => { setActiveSlip(slip.id); if (currentPage !== 'calculator') setCurrentPage('calculator'); setShowMobileSidebar(false); }}
               className={`px-3 py-2 rounded-lg border text-sm font-bold transition-colors text-left ${
                 activeSlipId === slip.id ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]' : 'bg-transparent text-white border-[var(--border-color)] hover:border-gray-400'
               }`}>
@@ -188,6 +185,41 @@ function App() {
             >コピーして追加</button>
           )}
         </div>
+
+        {/* LO一覧（サイドバーモード時） */}
+        {showLO && loDisplayMode === 'sidebar' && (
+          <>
+            <div className="border-t border-[var(--border-color)] pt-3 mt-1">
+              <label className="text-xs text-gray-400 block mb-2">LO一覧</label>
+              {tables.map(table => {
+                if (table.slips.length === 0) return null;
+                return (
+                  <div key={table.id} className="mb-2">
+                    <div className="text-xs font-bold text-[var(--gold-color)] mb-1">{table.name}</div>
+                    {table.slips.map(slip => {
+                      const res = calculateResult(slip.state, config, { loCapEnabled: true });
+                      const closingResult = res.schedule[res.schedule.length - 1];
+                      return (
+                        <div key={slip.id}
+                          onClick={() => { setActiveTable(table.id); setActiveSlip(slip.id); if (currentPage !== 'calculator') setCurrentPage('calculator'); setShowMobileSidebar(false); }}
+                          className="flex justify-between items-center px-2 py-1.5 rounded-md hover:bg-[rgba(255,215,0,0.05)] cursor-pointer mb-0.5 text-xs">
+                          <div className="flex-1 min-w-0">
+                            <span className="font-bold">{slip.name}</span>
+                            <span className="text-gray-500 ml-1">{CUSTOMER_TYPE_SHORT[slip.state.customerType]}</span>
+                          </div>
+                          <div className="flex gap-3 shrink-0">
+                            <span className="text-gray-400">¥{res.currentTotal.toLocaleString()}</span>
+                            <span className="font-bold text-[var(--gold-color)]">¥{closingResult?.totalPrice.toLocaleString() ?? '---'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* サイドバー下部: ライトモード + 設定 */}
@@ -225,8 +257,8 @@ function App() {
         >☰</button>
       )}
 
-      {/* 運営モード切替（LOモード時のみ） */}
-      {showLO && (
+      {/* LOタブ表示モード時のみ計算/LOタブ */}
+      {loAsTab && (
         <div className="flex mb-3 border border-[var(--border-color)] rounded-lg overflow-hidden">
           <button
             onClick={() => setCurrentPage('calculator')}
@@ -243,17 +275,17 @@ function App() {
         </div>
       )}
 
-      {/* メインコンテンツ: タブレットではサイドバー+メイン横並び */}
-      <div className={isTablet && currentPage === 'calculator' ? 'flex gap-4' : ''}>
+      {/* メインコンテンツ */}
+      <div className={isTablet ? 'flex gap-4' : ''}>
         {/* タブレット: 常時表示サイドバー */}
-        {isTablet && currentPage === 'calculator' && (
-          <div className="w-56 shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4">
+        {isTablet && (
+          <div className="w-60 shrink-0 bg-[var(--card-bg,#111827)] border border-[var(--border-color)] rounded-xl overflow-hidden self-start sticky top-4 max-h-[calc(100vh-2rem)]">
             {sidebarContent}
           </div>
         )}
 
-        {/* モバイル: ドロワーサイドバー */}
-        {!isTablet && showMobileSidebar && currentPage === 'calculator' && (
+        {/* モバイル: ドロワーサイドバー（全ページで開ける） */}
+        {!isTablet && showMobileSidebar && (
           <div className="fixed inset-0 z-[900] flex">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileSidebar(false)} />
             <div className="relative w-72 max-w-[80vw] h-full bg-[var(--card-bg,#111827)] border-r border-[var(--border-color)] shadow-2xl animate-slide-in-left overflow-hidden">
@@ -285,10 +317,8 @@ function App() {
                 </div>
               )}
 
-              {/* 伝票が選択されている場合のみ表示 */}
               {state && result && activeSlip ? (
                 <>
-                  {/* ヘッダー: 伝票名(リネーム可) + 削除 + 全伝票削除 */}
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       {showLO && <span className="text-lg font-bold text-[var(--gold-color)]">{activeTable.name}</span>}
@@ -325,12 +355,8 @@ function App() {
                     showAIDetail={showAIDetail}
                     config={config}
                     onTimeOverride={(time) => {
-                      if (time) {
-                        timeOverrideRef.current = true;
-                        dispatch({ type: 'SET_CURRENT_TIME', payload: time });
-                      } else {
-                        timeOverrideRef.current = false;
-                      }
+                      if (time) { timeOverrideRef.current = true; dispatch({ type: 'SET_CURRENT_TIME', payload: time }); }
+                      else { timeOverrideRef.current = false; }
                     }}
                     onOpenOrderDialog={() => setShowOrderDialog(true)}
                   />
@@ -345,7 +371,7 @@ function App() {
             </div>
           )}
 
-          {/* LOページ */}
+          {/* LOページ（タブモード時のみ） */}
           {currentPage === 'lo' && (
             <LOPage tables={tables} config={config} dispatchForSlip={dispatchForSlip}
               onMoveSlip={(fromTableId, slipId, toTableId) => multiDispatch({ type: 'MOVE_SLIP', payload: { fromTableId, slipId, toTableId } })}
@@ -363,6 +389,8 @@ function App() {
               onShowLOChange={persistShowLO}
               showAIDetail={showAIDetail}
               onShowAIDetailChange={persistAIDetail}
+              loDisplayMode={loDisplayMode}
+              onLoDisplayModeChange={persistLoDisplayMode}
             />
           )}
         </div>
@@ -386,17 +414,12 @@ function App() {
         />
       )}
 
-      {/* 新規伝票ダイアログ */}
       <NewSlipDialog
         isOpen={showNewSlipDialog}
         onClose={() => setShowNewSlipDialog(false)}
-        onCreate={(data) => {
-          addSlipWithData(data);
-          setShowNewSlipDialog(false);
-        }}
+        onCreate={(data) => { addSlipWithData(data); setShowNewSlipDialog(false); }}
       />
 
-      {/* コピーモーダル */}
       <SlipCopyModal
         isOpen={showCopyModal}
         onClose={() => setShowCopyModal(false)}
@@ -404,7 +427,6 @@ function App() {
         availableSlips={buildCopySlips()}
       />
 
-      {/* アップデート通知モーダル */}
       {showUpdateNotice && (
         <UpdateNotice onClose={() => {
           setShowUpdateNotice(false);
