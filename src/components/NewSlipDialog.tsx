@@ -3,6 +3,11 @@ import type { CustomerType } from '../hooks/useCalculator';
 
 type MainCategory = 'initial' | 'r' | 'regular';
 
+interface TableOption {
+  id: string;
+  name: string;
+}
+
 interface NewSlipDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,7 +16,11 @@ interface NewSlipDialogProps {
     initialSetPrice: number;
     entryTime: string;
     dohan: boolean;
+    tableId?: string;
   }) => void;
+  /** 運営モード時のみテーブル一覧を渡す */
+  tables?: TableOption[];
+  activeTableId?: string;
 }
 
 const HOURS = [20, 21, 22, 23, 24];
@@ -21,11 +30,12 @@ const MINUTE_ONES_ROW2 = [5, 6, 7, 8, 9];
 
 type TimeStep = 'hour' | 'minuteTens' | 'minuteOnes' | 'done';
 
-export const NewSlipDialog: React.FC<NewSlipDialogProps> = ({ isOpen, onClose, onCreate }) => {
+export const NewSlipDialog: React.FC<NewSlipDialogProps> = ({ isOpen, onClose, onCreate, tables, activeTableId }) => {
   const [mainCategory, setMainCategory] = useState<MainCategory>('regular');
   const [customerType, setCustomerType] = useState<CustomerType>('regular');
   const [initialSetPrice, setInitialSetPrice] = useState(0);
   const [dohan, setDohan] = useState(false);
+  const [selectedTableId, setSelectedTableId] = useState<string | undefined>(undefined);
 
   // Time state
   const [timeStep, setTimeStep] = useState<TimeStep>('hour');
@@ -38,11 +48,12 @@ export const NewSlipDialog: React.FC<NewSlipDialogProps> = ({ isOpen, onClose, o
     setCustomerType('regular');
     setInitialSetPrice(0);
     setDohan(false);
+    setSelectedTableId(activeTableId);
     setTimeStep('hour');
     setHour(20);
     setMinuteTens(0);
     setMinuteOnes(0);
-  }, []);
+  }, [activeTableId]);
 
   useEffect(() => {
     if (isOpen) resetState();
@@ -98,6 +109,7 @@ export const NewSlipDialog: React.FC<NewSlipDialogProps> = ({ isOpen, onClose, o
       initialSetPrice: customerType === 'initial' ? initialSetPrice : 0,
       entryTime: getTimeStr(),
       dohan,
+      tableId: selectedTableId,
     });
   };
 
@@ -125,6 +137,20 @@ export const NewSlipDialog: React.FC<NewSlipDialogProps> = ({ isOpen, onClose, o
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+          {/* テーブル選択（運営モード時のみ） */}
+          {tables && tables.length > 0 && (
+            <div>
+              <label className="text-xs text-gray-400 mb-2 block">テーブル</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {tables.map(t => (
+                  <button key={t.id} onClick={() => setSelectedTableId(t.id)}
+                    className={`py-2.5 text-sm ${btnBase} ${selectedTableId === t.id ? btnActive : btnInactive}`}
+                  >{t.name}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* 客種 */}
           <div>
             <label className="text-xs text-gray-400 mb-2 block">客種</label>

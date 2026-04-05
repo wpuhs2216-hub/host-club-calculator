@@ -386,7 +386,14 @@ function App() {
       <NewSlipDialog
         isOpen={showNewSlipDialog}
         onClose={() => setShowNewSlipDialog(false)}
-        onCreate={(data) => { addSlipWithData(data); setShowNewSlipDialog(false); }}
+        onCreate={(data) => {
+          const { tableId, ...slipData } = data;
+          if (tableId) setActiveTable(tableId);
+          addSlipWithData(slipData, tableId);
+          setShowNewSlipDialog(false);
+        }}
+        tables={showLO ? tables.map(t => ({ id: t.id, name: t.name })) : undefined}
+        activeTableId={activeTableId}
       />
 
       <SlipCopyModal
