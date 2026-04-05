@@ -333,6 +333,7 @@ function App() {
                       if (tableId) setActiveTable(tableId);
                       addSlipWithData(slipData, tableId);
                     }}
+                    tables={showLO && tables.every(t => t.slips.length === 0) ? tables.map(t => ({ id: t.id, name: t.name })) : undefined}
                     activeTableId={activeTableId}
                   />
                 </div>
