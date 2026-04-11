@@ -239,10 +239,17 @@ export function calculatorReducer(state: CalculatorState, action: Action, config
             return { ...state, currentTime: action.payload };
         case 'TOGGLE_DOHAN':
             return { ...state, dohan: !state.dohan };
-        case 'TOGGLE_SET_HALF_OFF':
+        case 'TOGGLE_SET_HALF_OFF': {
             // 感謝デー中はセット半額がデフォルトで適用されるため、手動切替を禁止
             if (state.isAppreciationDay) return state;
-            return { ...state, isSetHalfOff: !state.isSetHalfOff };
+            const nextSetHalfOff = !state.isSetHalfOff;
+            // セット半額ONの時はゴールドカードを強制OFF（併用不可）
+            return {
+                ...state,
+                isSetHalfOff: nextSetHalfOff,
+                isGoldTicket: nextSetHalfOff ? false : state.isGoldTicket,
+            };
+        }
         case 'TOGGLE_GIRLS_PARTY':
         case 'TOGGLE_APPRECIATION_DAY':
         case 'TOGGLE_SEVEN_LUCK': {
@@ -265,8 +272,15 @@ export function calculatorReducer(state: CalculatorState, action: Action, config
                 orders: syncHalfOffOrders(state.orders, state.customerType, nextGirls, nextAppreciation, nextSeven, config),
             };
         }
-        case 'TOGGLE_GOLD_TICKET':
-            return { ...state, isGoldTicket: !state.isGoldTicket };
+        case 'TOGGLE_GOLD_TICKET': {
+            const nextGold = !state.isGoldTicket;
+            // ゴールドカードONの時はセット半額を強制OFF（併用不可）
+            return {
+                ...state,
+                isGoldTicket: nextGold,
+                isSetHalfOff: nextGold ? false : state.isSetHalfOff,
+            };
+        }
         case 'SET_INITIAL_SET_PRICE':
             return { ...state, initialSetPrice: action.payload };
         case 'SET_ADDITIONAL_NOMINATION_COUNT':
@@ -386,7 +400,8 @@ export function calculateResult(state: CalculatorState, config: StoreConfig = GE
     }
 
     let appliedSetHalfOff = false;
-    if ((isSetHalfOff || isAppreciationDay) && customerType === 'regular') {
+    // ゴールドカード使用時はセット半額を適用しない（併用不可）
+    if ((isSetHalfOff || isAppreciationDay) && customerType === 'regular' && !isGoldTicket) {
         baseSetPrice = Math.floor(baseSetPrice / 2);
         extUnitCost = Math.floor(extUnitCost / 2);
         appliedSetHalfOff = true;

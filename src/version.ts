@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.1.1';
+export const APP_VERSION = '2.1.2';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,13 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.1.2',
+    notes: [
+      'ゴールドカードとセット半額を併用不可に',
+      '料金システム完全版ドキュメント追加（docs/pricing-system.md）',
+    ],
+  },
   {
     version: '2.1.1',
     notes: [
