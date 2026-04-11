@@ -168,7 +168,10 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                                 }`}
                             >
                                 <span className="text-sm font-bold mb-1 break-words w-full">{item.name}</span>
-                                {!item.isCustom && (
+                                {!item.isCustom && itemName === 'セブンラックタワー' && (
+                                    <span className="text-xs opacity-70">¥150,000 税込</span>
+                                )}
+                                {!item.isCustom && itemName !== 'セブンラックタワー' && (
                                     <span className="text-xs opacity-70">¥{item.price.toLocaleString()}</span>
                                 )}
                                 {item.isCustom && (

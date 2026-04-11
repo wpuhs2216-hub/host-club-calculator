@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.1.0';
+export const APP_VERSION = '2.1.1';
 
 export type VersionEntry = {
   version: string;
@@ -7,11 +7,17 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: '2.1.1',
+    notes: [
+      'セブンラックタワー表記を「¥150,000 税込」に修正（小計は111,100）',
+      '女子会デー ⇔ 感謝DAY のみ排他（セブンラックは両方と併用可）',
+    ],
+  },
+  {
     version: '2.1.0',
     notes: [
       'セブンラックタワー小計を111,100に変更',
       'ゴールドチケット → ゴールドカードに名称変更',
-      '女子会・感謝DAY・セブンラックを排他制御（二重割引禁止）',
       '感謝DAY中はセット半額ボタンを無効化（自動適用）',
     ],
   },

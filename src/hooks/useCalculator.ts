@@ -246,23 +246,23 @@ export function calculatorReducer(state: CalculatorState, action: Action, config
         case 'TOGGLE_GIRLS_PARTY':
         case 'TOGGLE_APPRECIATION_DAY':
         case 'TOGGLE_SEVEN_LUCK': {
-            // 女子会 / 感謝DAY / セブンラックは排他制御（二重割引禁止）
-            // トグル対象をON/OFF、ONにする場合は他の2つを強制OFF
-            const isOn = {
-                girls: action.type === 'TOGGLE_GIRLS_PARTY' ? !state.isGirlsParty : false,
-                appreciation: action.type === 'TOGGLE_APPRECIATION_DAY' ? !state.isAppreciationDay : false,
-                seven: action.type === 'TOGGLE_SEVEN_LUCK' ? !state.isSevenLuck : false,
-            };
-            const next = {
-                isGirlsParty: action.type === 'TOGGLE_GIRLS_PARTY' ? isOn.girls : (isOn.appreciation || isOn.seven ? false : state.isGirlsParty),
-                isAppreciationDay: action.type === 'TOGGLE_APPRECIATION_DAY' ? isOn.appreciation : (isOn.girls || isOn.seven ? false : state.isAppreciationDay),
-                isSevenLuck: action.type === 'TOGGLE_SEVEN_LUCK' ? isOn.seven : (isOn.girls || isOn.appreciation ? false : state.isSevenLuck),
-            };
+            // 女子会デー / 感謝DAY は排他（同じ種類の割引なので併用不可）
+            // セブンラックは両方と併用可能（半額ロジック側で二重割引防止済み）
+            const nextGirls = action.type === 'TOGGLE_GIRLS_PARTY'
+                ? !state.isGirlsParty
+                : (action.type === 'TOGGLE_APPRECIATION_DAY' && !state.isAppreciationDay ? false : state.isGirlsParty);
+            const nextAppreciation = action.type === 'TOGGLE_APPRECIATION_DAY'
+                ? !state.isAppreciationDay
+                : (action.type === 'TOGGLE_GIRLS_PARTY' && !state.isGirlsParty ? false : state.isAppreciationDay);
+            const nextSeven = action.type === 'TOGGLE_SEVEN_LUCK' ? !state.isSevenLuck : state.isSevenLuck;
             return {
-                ...state, ...next,
+                ...state,
+                isGirlsParty: nextGirls,
+                isAppreciationDay: nextAppreciation,
+                isSevenLuck: nextSeven,
                 // 感謝DAY中は手動セット半額をリセット（感謝DAYで自動適用されるため）
-                isSetHalfOff: next.isAppreciationDay ? false : state.isSetHalfOff,
-                orders: syncHalfOffOrders(state.orders, state.customerType, next.isGirlsParty, next.isAppreciationDay, next.isSevenLuck, config),
+                isSetHalfOff: nextAppreciation ? false : state.isSetHalfOff,
+                orders: syncHalfOffOrders(state.orders, state.customerType, nextGirls, nextAppreciation, nextSeven, config),
             };
         }
         case 'TOGGLE_GOLD_TICKET':
