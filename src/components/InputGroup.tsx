@@ -170,9 +170,10 @@ export const InputGroup: React.FC<InputGroupProps> = ({
 
             <Collapsible title="◈ 割引オプション">
                 <Toggle
-                    label="セット料金半額"
-                    checked={isSetHalfOff}
+                    label={isAppreciationDay ? "セット料金半額 (感謝DAY適用中)" : "セット料金半額"}
+                    checked={isSetHalfOff || isAppreciationDay}
                     onChange={onSetHalfOffToggle}
+                    disabled={isAppreciationDay}
                 />
                 <Toggle
                     label="女子会デー"
@@ -190,7 +191,7 @@ export const InputGroup: React.FC<InputGroupProps> = ({
                     onChange={onSevenLuckToggle}
                 />
                 <Toggle
-                    label="ゴールドチケット"
+                    label="ゴールドカード"
                     checked={isGoldTicket}
                     onChange={onGoldTicketToggle}
                 />
@@ -271,15 +272,18 @@ interface ToggleProps {
     checked: boolean;
     onChange: () => void;
     price?: number;
+    disabled?: boolean;
 }
 
-export const Toggle: React.FC<ToggleProps> = ({ label, checked, onChange, price }) => {
+export const Toggle: React.FC<ToggleProps> = ({ label, checked, onChange, price, disabled }) => {
     return (
-        <div 
-            className={`mb-4 flex justify-between items-center cursor-pointer bg-[var(--input-bg)] p-3 rounded-md border transition-all duration-200 select-none ${
+        <div
+            className={`mb-4 flex justify-between items-center bg-[var(--input-bg)] p-3 rounded-md border transition-all duration-200 select-none ${
+                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+            } ${
                 checked ? 'border-[var(--gold-color)] shadow-[0_0_8px_rgba(212,175,55,0.2)]' : 'border-[var(--border-color)] hover:border-gray-500'
             }`}
-            onClick={onChange}
+            onClick={disabled ? undefined : onChange}
         >
             <div>
                 <div className="font-bold">{label}</div>

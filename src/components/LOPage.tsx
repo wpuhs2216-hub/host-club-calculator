@@ -255,7 +255,7 @@ export const LOPage: React.FC<LOPageProps> = ({ tables, config, dispatchForSlip,
                                                     { label: '女子会', active: slip.state.isGirlsParty, action: 'TOGGLE_GIRLS_PARTY' as const },
                                                     { label: '感謝DAY', active: slip.state.isAppreciationDay, action: 'TOGGLE_APPRECIATION_DAY' as const },
                                                     { label: 'セブンラック', active: slip.state.isSevenLuck, action: 'TOGGLE_SEVEN_LUCK' as const },
-                                                    { label: 'ゴールドチケット', active: slip.state.isGoldTicket, action: 'TOGGLE_GOLD_TICKET' as const },
+                                                    { label: 'ゴールドカード', active: slip.state.isGoldTicket, action: 'TOGGLE_GOLD_TICKET' as const },
                                                 ].map(toggle => (
                                                     <button key={toggle.label}
                                                         onClick={() => dispatchForSlip(table.id, slip.id, { type: toggle.action })}

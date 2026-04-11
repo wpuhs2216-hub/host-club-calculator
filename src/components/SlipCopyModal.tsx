@@ -20,7 +20,7 @@ const FIELD_GROUPS = [
   { id: 'customerType', label: '客種', description: '客種 + セット料金' },
   { id: 'entryTime', label: '入店時間', description: '入店時間' },
   { id: 'dohan', label: '同伴', description: '同伴フラグ' },
-  { id: 'events', label: 'イベント', description: '女子会・感謝DAY・セブンラック・ゴールドチケット' },
+  { id: 'events', label: 'イベント', description: '女子会・感謝DAY・セブンラック・ゴールドカード' },
   { id: 'setHalfOff', label: 'セット半額', description: 'セット料金半額' },
   { id: 'nomination', label: '指名', description: '複数指名の人数' },
   { id: 'orders', label: '注文', description: '注文リスト (全品コピー)' },

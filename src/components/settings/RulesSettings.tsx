@@ -36,9 +36,9 @@ export const RulesSettings: React.FC<Props> = ({ config, onUpdate }) => {
                 <p className="text-xs text-gray-500 mt-1">※ 1478 = 24:38（0:38 AM）</p>
             </div>
 
-            {/* ゴールドチケット */}
+            {/* ゴールドカード */}
             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
-                <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">ゴールドチケット</h3>
+                <h3 className="text-sm font-bold text-[var(--gold-color)] mb-3">ゴールドカード</h3>
                 <NumberInput label="セット料金上書き" value={config.goldTicket.setOverride}
                     onChange={(v) => onUpdate(prev => ({ ...prev, goldTicket: { ...prev.goldTicket, setOverride: v } }))} />
                 <NumberInput label="延長料金上書き" value={config.goldTicket.extOverride}

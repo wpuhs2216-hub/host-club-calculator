@@ -270,7 +270,7 @@ export const SlipWizard: React.FC<SlipWizardProps> = ({
               onChange={() => dispatch({ type: 'TOGGLE_SEVEN_LUCK' })}
             />
             <WizardToggle
-              label="ゴールドチケット"
+              label="ゴールドカード"
               checked={state.isGoldTicket}
               onChange={() => dispatch({ type: 'TOGGLE_GOLD_TICKET' })}
             />

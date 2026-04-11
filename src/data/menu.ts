@@ -42,5 +42,5 @@ export const MENU_ITEMS = [
     { name: 'SPLルミナスマグナム', price: 400000 },
     { name: 'SPLプラチナ', price: 450000 },
 
-    { name: 'セブンラックタワー', price: 150000, isTaxIncluded: true },
+    { name: 'セブンラックタワー', price: 111100 },
 ];

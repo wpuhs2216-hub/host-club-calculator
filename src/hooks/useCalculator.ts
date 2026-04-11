@@ -240,17 +240,28 @@ export function calculatorReducer(state: CalculatorState, action: Action, config
         case 'TOGGLE_DOHAN':
             return { ...state, dohan: !state.dohan };
         case 'TOGGLE_SET_HALF_OFF':
+            // 感謝デー中はセット半額がデフォルトで適用されるため、手動切替を禁止
+            if (state.isAppreciationDay) return state;
             return { ...state, isSetHalfOff: !state.isSetHalfOff };
         case 'TOGGLE_GIRLS_PARTY':
         case 'TOGGLE_APPRECIATION_DAY':
         case 'TOGGLE_SEVEN_LUCK': {
+            // 女子会 / 感謝DAY / セブンラックは排他制御（二重割引禁止）
+            // トグル対象をON/OFF、ONにする場合は他の2つを強制OFF
+            const isOn = {
+                girls: action.type === 'TOGGLE_GIRLS_PARTY' ? !state.isGirlsParty : false,
+                appreciation: action.type === 'TOGGLE_APPRECIATION_DAY' ? !state.isAppreciationDay : false,
+                seven: action.type === 'TOGGLE_SEVEN_LUCK' ? !state.isSevenLuck : false,
+            };
             const next = {
-                isGirlsParty: action.type === 'TOGGLE_GIRLS_PARTY' ? !state.isGirlsParty : state.isGirlsParty,
-                isAppreciationDay: action.type === 'TOGGLE_APPRECIATION_DAY' ? !state.isAppreciationDay : state.isAppreciationDay,
-                isSevenLuck: action.type === 'TOGGLE_SEVEN_LUCK' ? !state.isSevenLuck : state.isSevenLuck,
+                isGirlsParty: action.type === 'TOGGLE_GIRLS_PARTY' ? isOn.girls : (isOn.appreciation || isOn.seven ? false : state.isGirlsParty),
+                isAppreciationDay: action.type === 'TOGGLE_APPRECIATION_DAY' ? isOn.appreciation : (isOn.girls || isOn.seven ? false : state.isAppreciationDay),
+                isSevenLuck: action.type === 'TOGGLE_SEVEN_LUCK' ? isOn.seven : (isOn.girls || isOn.appreciation ? false : state.isSevenLuck),
             };
             return {
                 ...state, ...next,
+                // 感謝DAY中は手動セット半額をリセット（感謝DAYで自動適用されるため）
+                isSetHalfOff: next.isAppreciationDay ? false : state.isSetHalfOff,
                 orders: syncHalfOffOrders(state.orders, state.customerType, next.isGirlsParty, next.isAppreciationDay, next.isSevenLuck, config),
             };
         }

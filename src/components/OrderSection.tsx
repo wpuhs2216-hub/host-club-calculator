@@ -98,7 +98,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
             setCustomPrice('');
         } else {
             // 元の名前・元の価格で渡す。半額計算はreducer側で行う
-            onAdd(selectedItem.name, selectedItem.price, selectedItem.isTaxIncluded, selectedItem.canHalfOff, !!(isHalfOff && canHalfOff));
+            onAdd(selectedItem.name, selectedItem.price, (selectedItem as { isTaxIncluded?: boolean }).isTaxIncluded, selectedItem.canHalfOff, !!(isHalfOff && canHalfOff));
         }
     };
 
