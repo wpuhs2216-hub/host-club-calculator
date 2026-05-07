@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.1.2';
+export const APP_VERSION = '2.2.0';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,13 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.2.0',
+    notes: [
+      'アプリ内「使い方ガイド」ページ追加（📖ボタン）',
+      '新人研修用ハンドブック・操作ガイド・共有用テキストメモを追加',
+    ],
+  },
   {
     version: '2.1.2',
     notes: [
