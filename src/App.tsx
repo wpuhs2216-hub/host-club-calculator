@@ -12,11 +12,12 @@ import { LOPage } from './components/LOPage';
 import { ResultDisplay } from './components/ResultDisplay';
 import { SettingsPage } from './components/SettingsPage';
 import { HowToPage } from './components/HowToPage';
+import { TrainingGuidePage } from './components/TrainingGuidePage';
 import { UpdateNotice } from './components/UpdateNotice';
 import { useStoreConfig } from './contexts/StoreConfigContext';
 import { APP_VERSION } from './version';
 
-type PageTab = 'calculator' | 'lo' | 'settings' | 'howto';
+type PageTab = 'calculator' | 'lo' | 'settings' | 'howto' | 'handbook';
 type LODisplayMode = 'sidebar' | 'tab';
 
 // PWA即時更新
@@ -236,6 +237,17 @@ function App() {
             <span>使い方</span>
           </button>
           <button
+            onClick={() => { setCurrentPage(currentPage === 'handbook' ? 'calculator' : 'handbook'); setShowMobileSidebar(false); }}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
+              currentPage === 'handbook'
+                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:border-[var(--gold-color)]'
+            }`}
+          >
+            <span>📚</span>
+            <span>会計ハンドブック</span>
+          </button>
+          <button
             onClick={() => { setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings'); setShowMobileSidebar(false); }}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
               currentPage === 'settings'
@@ -268,6 +280,14 @@ function App() {
                 : 'bg-[var(--input-bg)] text-[var(--text-color)] border-[var(--border-color)] hover:border-[var(--gold-color)]'
             }`}>
             📖
+          </button>
+          <button onClick={() => setCurrentPage(currentPage === 'handbook' ? 'calculator' : 'handbook')}
+            className={`w-9 h-9 rounded-full border flex items-center justify-center text-sm cursor-pointer transition-colors ${
+              currentPage === 'handbook'
+                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                : 'bg-[var(--input-bg)] text-[var(--text-color)] border-[var(--border-color)] hover:border-[var(--gold-color)]'
+            }`}>
+            📚
           </button>
           <button onClick={() => setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings')}
             className={`w-9 h-9 rounded-full border flex items-center justify-center text-sm cursor-pointer transition-colors ${
@@ -457,6 +477,9 @@ function App() {
 
           {/* 使い方ページ */}
           {currentPage === 'howto' && <HowToPage />}
+
+          {/* 会計ハンドブック */}
+          {currentPage === 'handbook' && <TrainingGuidePage />}
         </div>
       </div>
 

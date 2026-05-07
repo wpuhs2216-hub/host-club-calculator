@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.2.0';
+export const APP_VERSION = '2.3.0';
 
 export type VersionEntry = {
   version: string;
@@ -7,10 +7,17 @@ export type VersionEntry = {
 
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: '2.3.0',
+    notes: [
+      'アプリ内「会計ハンドブック」ページ追加（📚ボタン）',
+      '料金表・計算例・テスト問題をアプリから直接閲覧可能に',
+    ],
+  },
+  {
     version: '2.2.0',
     notes: [
       'アプリ内「使い方ガイド」ページ追加（📖ボタン）',
-      '新人研修用ハンドブック・操作ガイド・共有用テキストメモを追加',
+      '新人用ハンドブック・操作ガイド・共有用テキストメモを追加',
     ],
   },
   {
