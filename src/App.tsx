@@ -11,11 +11,12 @@ import type { SlipInfo as CopySlipInfo } from './components/SlipCopyModal';
 import { LOPage } from './components/LOPage';
 import { ResultDisplay } from './components/ResultDisplay';
 import { SettingsPage } from './components/SettingsPage';
+import { HowToPage } from './components/HowToPage';
 import { UpdateNotice } from './components/UpdateNotice';
 import { useStoreConfig } from './contexts/StoreConfigContext';
 import { APP_VERSION } from './version';
 
-type PageTab = 'calculator' | 'lo' | 'settings';
+type PageTab = 'calculator' | 'lo' | 'settings' | 'howto';
 type LODisplayMode = 'sidebar' | 'tab';
 
 // PWA即時更新
@@ -224,6 +225,17 @@ function App() {
             <span>{lightMode ? 'ダークモード' : 'ライトモード'}</span>
           </button>
           <button
+            onClick={() => { setCurrentPage(currentPage === 'howto' ? 'calculator' : 'howto'); setShowMobileSidebar(false); }}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
+              currentPage === 'howto'
+                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                : 'bg-[var(--input-bg)] text-white border-[var(--border-color)] hover:border-[var(--gold-color)]'
+            }`}
+          >
+            <span>📖</span>
+            <span>使い方</span>
+          </button>
+          <button
             onClick={() => { setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings'); setShowMobileSidebar(false); }}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold transition-all outline-none cursor-pointer ${
               currentPage === 'settings'
@@ -248,14 +260,24 @@ function App() {
         </button>
       ) : undefined}
       headerRight={sidebarVisible ? (
-        <button onClick={() => setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings')}
-          className={`w-9 h-9 rounded-full border flex items-center justify-center text-sm cursor-pointer transition-colors ${
-            currentPage === 'settings'
-              ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
-              : 'bg-[var(--input-bg)] text-[var(--text-color)] border-[var(--border-color)] hover:border-[var(--gold-color)]'
-          }`}>
-          ◈
-        </button>
+        <div className="flex gap-1.5">
+          <button onClick={() => setCurrentPage(currentPage === 'howto' ? 'calculator' : 'howto')}
+            className={`w-9 h-9 rounded-full border flex items-center justify-center text-sm cursor-pointer transition-colors ${
+              currentPage === 'howto'
+                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                : 'bg-[var(--input-bg)] text-[var(--text-color)] border-[var(--border-color)] hover:border-[var(--gold-color)]'
+            }`}>
+            📖
+          </button>
+          <button onClick={() => setCurrentPage(currentPage === 'settings' ? 'calculator' : 'settings')}
+            className={`w-9 h-9 rounded-full border flex items-center justify-center text-sm cursor-pointer transition-colors ${
+              currentPage === 'settings'
+                ? 'bg-[var(--gold-color)] text-black border-[var(--gold-color)]'
+                : 'bg-[var(--input-bg)] text-[var(--text-color)] border-[var(--border-color)] hover:border-[var(--gold-color)]'
+            }`}>
+            ◈
+          </button>
+        </div>
       ) : undefined}
     >
       {/* サイドバー開閉ボタン（左上固定） — サイドバー非固定時のみ */}
@@ -432,6 +454,9 @@ function App() {
               onSidebarPinnedChange={persistSidebarPinned}
             />
           )}
+
+          {/* 使い方ページ */}
+          {currentPage === 'howto' && <HowToPage />}
         </div>
       </div>
 
