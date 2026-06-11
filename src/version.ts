@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.3.0';
+export const APP_VERSION = '2.3.1';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,14 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.3.1',
+    notes: [
+      'ハンドブック: Rの略称を「リターン」に修正',
+      'ハンドブック: 新規の同伴を「適用不可」→「無料（¥0）」に修正',
+      'ハンドブック: 「初回セット」→「1セットの時間」に表記変更',
+    ],
+  },
   {
     version: '2.3.0',
     notes: [
