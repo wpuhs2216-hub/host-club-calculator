@@ -82,7 +82,7 @@ function CustomerSection() {
     <div className="flex flex-col gap-3">
       <Card title="客種の見分け方">
         <Row label="新規" value="1回目の来店" />
-        <Row label="R（リピーター）" value="2回目の来店" />
+        <Row label="R（リターン）" value="2回目の来店" />
         <Row label="正規" value="3回目以降の来店" />
       </Card>
       <Card title="R の2種類">
@@ -115,9 +115,9 @@ function PricingSection() {
         <Row label="延長料金" value="¥2,000 / 1時間" />
         <Row label="指名料" value="¥1,000" />
         <Row label="T.C" value="¥0" />
-        <Row label="初回セット" value="1時間" bold />
+        <Row label="1セットの時間" value="1時間" bold />
         <Note type="tip">¥0は無料キャンペーン期間のみ。通常は「フリー回し飲み」¥1,000/¥3,000/¥5,000から選択</Note>
-        <Note type="warn">同伴は適用不可。最初のショットは無料（2杯目から半額）</Note>
+        <Note type="warn">同伴は無料（¥0）。最初のショットは無料（2杯目から半額）</Note>
         <Note type="tip">オーダー無し → 非課税（TAX/SVC 0%）</Note>
       </Card>
 
@@ -126,7 +126,7 @@ function PricingSection() {
         <Row label="延長料金" value="¥1,000 / 1時間" />
         <Row label="指名料" value="¥1,000" />
         <Row label="T.C" value="¥0" />
-        <Row label="初回セット" value="2時間" bold />
+        <Row label="1セットの時間" value="2時間" bold />
       </Card>
 
       <Card title="Rチケット無し">
@@ -134,7 +134,7 @@ function PricingSection() {
         <Row label="延長料金" value="¥1,000 / 1時間" />
         <Row label="指名料" value="¥1,000" />
         <Row label="T.C" value="¥500" />
-        <Row label="初回セット" value="2時間" bold />
+        <Row label="1セットの時間" value="2時間" bold />
         <Note type="tip">サービスドリンクあり（下記参照）</Note>
       </Card>
 
@@ -150,7 +150,7 @@ function PricingSection() {
           <span className="text-gray-400 text-left">延長</span><span>¥3,000</span><span>¥3,000</span>
           <span className="text-gray-400 text-left">指名</span><span>¥3,000</span><span>¥3,000</span>
           <span className="text-gray-400 text-left">T.C</span><span>¥500</span><span>¥500</span>
-          <span className="text-gray-400 text-left">初回</span><span className="font-bold">1時間</span><span className="font-bold">1時間</span>
+          <span className="text-gray-400 text-left">1セット</span><span className="font-bold">1時間</span><span className="font-bold">1時間</span>
         </div>
         <Note type="tip">サービスドリンクあり（下記参照）</Note>
       </Card>
@@ -169,15 +169,15 @@ function PricingSection() {
 
       <Card title="覚えるポイント">
         <div className="text-sm flex flex-col gap-1">
-          <p>・新規・正規 → 初回 <b>1時間</b></p>
-          <p>・R系 → 初回 <b>2時間</b></p>
-          <p>・新規に同伴はつかない</p>
+          <p>・新規・正規 → 1セット <b>1時間</b></p>
+          <p>・R系 → 1セット <b>2時間</b></p>
+          <p>・新規の同伴は<b>無料（¥0）</b></p>
           <p>・新規でオーダー無し → 非課税</p>
         </div>
       </Card>
 
       <Quiz questions={[
-        { q: 'Q4: Rチケット有りのお客様が3時間滞在 → 延長は何セット？', a: '1セット（3時間 − 初回2時間 = 延長1本）' },
+        { q: 'Q4: Rチケット有りのお客様が3時間滞在 → 延長は何本？', a: '1本（滞在3時間 − 1セット2時間 = 延長1時間）' },
         { q: 'Q5: 正規のお客様が21:30に入店 → セット料金は？', a: '¥5,000（21:00以降の料金）' },
         { q: 'Q6: 新規のお客様にオーダーが無い → TAX/SVCは何%？', a: '0%' },
       ]} />
@@ -190,7 +190,7 @@ function CompanionSection() {
     <div className="flex flex-col gap-3">
       <Card title="同伴料">
         <Row label="同伴料" value="¥3,000" />
-        <Note type="warn">新規には適用されない</Note>
+        <Note type="warn">新規は無料（¥0）</Note>
       </Card>
       <Card title="複数指名">
         <Row label="追加指名料" value="¥3,000 × 追加人数" />
@@ -198,7 +198,7 @@ function CompanionSection() {
       </Card>
       <Quiz questions={[
         { q: 'Q7: 正規、同伴あり、追加指名1人 → 指名関連の合計は？', a: '指名¥3,000 + 同伴¥3,000 + 追加指名¥3,000 = ¥9,000' },
-        { q: 'Q8: 新規のお客様に同伴料はかかる？', a: 'かからない' },
+        { q: 'Q8: 新規のお客様に同伴料はかかる？', a: 'かからない（新規の同伴は無料）' },
       ]} />
     </div>
   );
@@ -210,7 +210,7 @@ function GoldSection() {
       <Card title="ゴールドカード">
         <Row label="セット料金" value="¥0 に上書き" bold />
         <Row label="延長料金" value="¥1,000 に上書き" bold />
-        <Row label="初回セット" value="2時間" bold />
+        <Row label="1セットの時間" value="2時間" bold />
         <div className="text-sm mt-3 flex flex-col gap-1">
           <p>・どの客種でも使える</p>
           <p>・指名料・T.C・同伴料は変わらない</p>
@@ -218,7 +218,7 @@ function GoldSection() {
         <Note type="warn">セット半額とは併用不可（どちらか一方のみ）</Note>
       </Card>
       <Quiz questions={[
-        { q: 'Q9: 正規（21:00以降入店）、ゴールドカード、3時間滞在 → セット+延長の合計は？', a: 'セット¥0 + 延長¥1,000（3h − 初回2h = 1本）= ¥1,000' },
+        { q: 'Q9: 正規（21:00以降入店）、ゴールドカード、3時間滞在 → セット+延長の合計は？', a: 'セット¥0 + 延長¥1,000（3h − 1セット2h = 1本）= ¥1,000' },
       ]} />
     </div>
   );
@@ -355,7 +355,7 @@ function CalcFlowSection() {
         {[
           '客種と入店時刻を確認 → セット・延長料金を決定',
           'ゴールドカードがあれば上書き（セット¥0、延長¥1,000）',
-          '滞在時間から延長本数を計算\n→ 滞在時間（切り上げ） − 初回セット = 延長本数',
+          '滞在時間から延長本数を計算\n→ 滞在時間（切り上げ） − 1セットの時間 = 延長本数',
           '小計を出す\n→ セット+延長+指名+同伴+T.C+複数指名+オーダー',
           'TAX/SVCを加算して百円切り上げ\n→ 小計 × 1.35 → 百円切り上げ = 最終合計',
         ].map((step, i) => (
@@ -395,7 +395,7 @@ function ExamplesSection() {
         conditions={['新規（セット¥1,000）', '20:30入店 → 22:00会計', 'オーダー: なし']}
         steps={[
           '滞在1.5h → 切り上げ 2時間',
-          '初回1h → 延長 1本',
+          '1セット1h → 延長 1本',
           'セット¥1,000 + 延長¥2,000 + 指名¥1,000 = ¥4,000',
           'オーダー無しの新規 → TAX/SVC 0%',
         ]}
@@ -405,7 +405,7 @@ function ExamplesSection() {
         title="例2: Rチケット有り × カン2本"
         conditions={['Rチケット有り', '20:00入店 → 23:00会計', 'カン × 2']}
         steps={[
-          '滞在3h、初回2h → 延長 1本',
+          '滞在3h、1セット2h → 延長 1本',
           'セット¥0 + 延長¥1,000 + 指名¥1,000 + カン¥3,000 = ¥5,000',
           'TAX/SVC: ¥5,000 × 35% = ¥1,750',
           '¥6,750 → 切り上げ',
@@ -416,7 +416,7 @@ function ExamplesSection() {
         title="例3: 正規（21:00前入店）× 同伴+複数指名+シャンパン"
         conditions={['正規（20:30入店）', '24:00会計（3.5h滞在）', '同伴あり、追加指名2人', 'SPLブルー × 1']}
         steps={[
-          '滞在3.5h → 切り上げ4h、初回1h → 延長 3本',
+          '滞在3.5h → 切り上げ4h、1セット1h → 延長 3本',
           'セット¥2,000 + 延長¥9,000 = ¥11,000',
           '指名¥3,000 + 同伴¥3,000 + T.C¥500 + 追加指名¥6,000 = ¥12,500',
           'SPLブルー¥35,000（正規・イベント無し→半額なし）',
@@ -428,7 +428,7 @@ function ExamplesSection() {
         title="例4: 正規 × 女子会デー × シャンパン2本"
         conditions={['正規（21:30入店）', '24:30会計（3h滞在）', '女子会デー', 'SPLロゼ × 2']}
         steps={[
-          '滞在3h、初回1h → 延長 2本',
+          '滞在3h、1セット1h → 延長 2本',
           'セット¥5,000 + 延長¥6,000 = ¥11,000',
           '指名¥3,000 + T.C¥500 = ¥3,500',
           'SPLロゼ → 女子会デーで両方半額 → ¥40,000×2 = ¥80,000',
@@ -440,7 +440,7 @@ function ExamplesSection() {
         title="例5: 正規 × ゴールドカード"
         conditions={['正規（20:00入店）', '23:00会計（3h滞在）', 'ゴールドカード使用', 'オーダー: なし']}
         steps={[
-          'ゴールドカードで上書き → 初回2h → 延長 1本',
+          'ゴールドカードで上書き → 1セット2h → 延長 1本',
           'セット¥0 + 延長¥1,000 = ¥1,000',
           '指名¥3,000 + T.C¥500 = ¥3,500',
           '小計: ¥4,500、TAX/SVC: ¥1,575',
@@ -453,7 +453,7 @@ function ExamplesSection() {
 
 function MistakesSection() {
   const mistakes = [
-    { mistake: '新規に同伴料をつけた', correct: '新規に同伴はつかない' },
+    { mistake: '新規に同伴料をつけた', correct: '新規の同伴は無料（¥0）' },
     { mistake: '感謝デーと女子会デーを同時にON', correct: '排他なので同時にできない' },
     { mistake: 'ゴールドカード＋セット半額を両方ON', correct: '併用不可（どちらか一方）' },
     { mistake: 'カンの半額を¥750にした', correct: 'カンは ¥700固定' },
@@ -497,7 +497,7 @@ function QuizSection() {
 function GlossarySection() {
   const terms = [
     ['セット料金', '席についた時にかかる基本料金'],
-    ['延長', '初回セット時間を超えた分、1時間ごとに追加される料金'],
+    ['延長', '1セットの時間を超えた分、1時間ごとに追加される料金'],
     ['指名料', 'キャストを指名するときの料金'],
     ['同伴', 'お客様が店外からキャストと一緒に来店すること'],
     ['T.C', 'テーブルチャージ。Rチケット無しと正規に発生'],
