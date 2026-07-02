@@ -4,6 +4,37 @@ import { createDefaultStoreConfig } from '../data/defaultStoreConfig';
 
 const STORAGE_KEY = 'host-club-store-registry';
 
+// v2.4.0 価格改定: 保存済み設定にも新価格を強制反映する（1回だけ実行）
+const PRICE_MIGRATION_KEY = 'price-migration-v2.4.0';
+const PRICE_UPDATES: Record<string, number> = {
+    'ショット系': 3000,
+    '1800': 5000,
+    'コカボム': 5000,
+    'テキーラスタンド（12）': 39000,
+    'テキーラスタンド（16）': 48000,
+    'テキーラスタンドVIP': 72000,
+};
+
+function migratePrices(registry: StoreRegistry): StoreRegistry {
+    try {
+        if (localStorage.getItem(PRICE_MIGRATION_KEY)) return registry;
+        const applyPrice = <T extends { name: string; price: number }>(item: T): T =>
+            item.name in PRICE_UPDATES ? { ...item, price: PRICE_UPDATES[item.name] } : item;
+        const migrated: StoreRegistry = {
+            ...registry,
+            stores: registry.stores.map(store => ({
+                ...store,
+                menuItems: store.menuItems.map(applyPrice),
+                pinnedOrders: store.pinnedOrders.map(applyPrice),
+            })),
+        };
+        localStorage.setItem(PRICE_MIGRATION_KEY, 'done');
+        return migrated;
+    } catch {
+        return registry;
+    }
+}
+
 interface StoreConfigContextValue {
     config: StoreConfig;
     registry: StoreRegistry;
@@ -20,7 +51,7 @@ function loadRegistry(): StoreRegistry {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             const parsed = JSON.parse(saved) as StoreRegistry;
-            if (parsed.stores && parsed.stores.length > 0) return parsed;
+            if (parsed.stores && parsed.stores.length > 0) return migratePrices(parsed);
         }
     } catch { /* ignore */ }
 

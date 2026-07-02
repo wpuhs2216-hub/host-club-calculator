@@ -2,9 +2,9 @@ export const MENU_ITEMS = [
     { name: 'カン', price: 1500, canHalfOff: true },
     { name: 'ペットボトル', price: 2000 },
     { name: 'ソフトドリンク', price: 500 },
-    { name: 'ショット系', price: 2000, canHalfOff: true },
-    { name: '1800', price: 3000 },
-    { name: 'コカボム', price: 3000 },
+    { name: 'ショット系', price: 3000, canHalfOff: true },
+    { name: '1800', price: 5000 },
+    { name: 'コカボム', price: 5000 },
     { name: '茉莉花', price: 15000 },
 
     { name: 'オリシャン / その他', price: 0, isCustom: true },
@@ -21,9 +21,9 @@ export const MENU_ITEMS = [
     { name: 'カクテル', price: 1000 },
     { name: 'レッドブル', price: 1500 },
 
-    { name: 'テキーラスタンド（12）', price: 22000 },
-    { name: 'テキーラスタンド（16）', price: 28000 },
-    { name: 'テキーラスタンドVIP', price: 45000 },
+    { name: 'テキーラスタンド（12）', price: 39000 },
+    { name: 'テキーラスタンド（16）', price: 48000 },
+    { name: 'テキーラスタンドVIP', price: 72000 },
 
     { name: 'リステル', price: 20000, canHalfOff: true },
     { name: 'アスティ', price: 28000, canHalfOff: true },

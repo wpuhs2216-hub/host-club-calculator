@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.3.1';
+export const APP_VERSION = '2.4.0';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,15 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.4.0',
+    notes: [
+      '価格改定: ショット系 ¥2,000 → ¥3,000（半額時 ¥1,500）',
+      '価格改定: 1800・コカボム ¥3,000 → ¥5,000',
+      '価格改定: テキーラスタンド（12）¥39,000 /（16）¥48,000 / VIP ¥72,000',
+      '保存済みの店舗設定にも新価格を自動反映',
+    ],
+  },
   {
     version: '2.3.1',
     notes: [
