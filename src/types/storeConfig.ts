@@ -46,6 +46,7 @@ export interface HalfOffRules {
     blueToGoldMaxPrice: number;
     initialROneBottleLimit: boolean;
     canSpecialPrice: number;
+    shotSpecialPrice: number;
 }
 
 export interface StoreConfig {

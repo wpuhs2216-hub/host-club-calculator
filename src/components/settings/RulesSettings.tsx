@@ -54,6 +54,8 @@ export const RulesSettings: React.FC<Props> = ({ config, onUpdate }) => {
                     onChange={(v) => onUpdate(prev => ({ ...prev, halfOffRules: { ...prev.halfOffRules, blueToGoldMaxPrice: v } }))} />
                 <NumberInput label="カン半額特殊価格" value={config.halfOffRules.canSpecialPrice}
                     onChange={(v) => onUpdate(prev => ({ ...prev, halfOffRules: { ...prev.halfOffRules, canSpecialPrice: v } }))} />
+                <NumberInput label="ショット半額特殊価格" value={config.halfOffRules.shotSpecialPrice}
+                    onChange={(v) => onUpdate(prev => ({ ...prev, halfOffRules: { ...prev.halfOffRules, shotSpecialPrice: v } }))} />
                 <div className="flex items-center justify-between py-1.5">
                     <span className="text-sm text-gray-300">初回/R 1本制限</span>
                     <input type="checkbox" checked={config.halfOffRules.initialROneBottleLimit}

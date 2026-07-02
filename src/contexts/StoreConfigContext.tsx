@@ -15,6 +15,20 @@ const PRICE_UPDATES: Record<string, number> = {
     'テキーラスタンドVIP': 72000,
 };
 
+// v2.4.2: ショット系の半額特殊価格フィールドを旧保存データに補完（毎回実行しても無害）
+function migrateShotSpecialPrice(registry: StoreRegistry): StoreRegistry {
+    return {
+        ...registry,
+        stores: registry.stores.map(store => ({
+            ...store,
+            halfOffRules: {
+                ...store.halfOffRules,
+                shotSpecialPrice: store.halfOffRules.shotSpecialPrice ?? 1000,
+            },
+        })),
+    };
+}
+
 function migratePrices(registry: StoreRegistry): StoreRegistry {
     try {
         if (localStorage.getItem(PRICE_MIGRATION_KEY)) return registry;
@@ -51,7 +65,7 @@ function loadRegistry(): StoreRegistry {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             const parsed = JSON.parse(saved) as StoreRegistry;
-            if (parsed.stores && parsed.stores.length > 0) return migratePrices(parsed);
+            if (parsed.stores && parsed.stores.length > 0) return migrateShotSpecialPrice(migratePrices(parsed));
         }
     } catch { /* ignore */ }
 

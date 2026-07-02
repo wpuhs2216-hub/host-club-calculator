@@ -80,6 +80,7 @@ export function createDefaultStoreConfig(id?: string): StoreConfig {
             blueToGoldMaxPrice: 150000,
             initialROneBottleLimit: true,
             canSpecialPrice: 700,
+            shotSpecialPrice: 1000,
         },
     };
 }

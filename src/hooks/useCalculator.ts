@@ -106,10 +106,14 @@ export const INITIAL_STATE = createInitialState(GENTLY_DIVA_CONFIG);
 
 // 半額計算ヘルパー
 function calcHalfOffPrice(baseName: string, originalPrice: number, config: StoreConfig): number {
-    const specialPrice = config.halfOffRules.canSpecialPrice;
+    const { canSpecialPrice, shotSpecialPrice } = config.halfOffRules;
     // カンの半額は特殊価格（デフォルト700）
     const canName = config.pinnedOrders[0]?.name ?? 'カン';
-    return baseName === canName && specialPrice ? specialPrice : Math.floor(originalPrice / 2);
+    if (baseName === canName && canSpecialPrice) return canSpecialPrice;
+    // ショット系の半額も特殊価格（デフォルト1000、価格の1/2ではない）
+    const shotName = config.pinnedOrders[2]?.name ?? 'ショット系';
+    if (baseName === shotName && shotSpecialPrice) return shotSpecialPrice;
+    return Math.floor(originalPrice / 2);
 }
 
 // イベント・客層に応じて半額状態を同期

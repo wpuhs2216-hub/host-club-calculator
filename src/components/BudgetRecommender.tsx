@@ -39,12 +39,12 @@ export const BudgetRecommender: React.FC<BudgetRecommenderProps> = ({ result, st
     const pinnedShot = state.orders.find(o => o.baseName === 'ショット系');
     // 計算用: 実効価格（半額適用後）
     const canPrice = pinnedCan?.price ?? 1500;
-    const shotPrice = pinnedShot?.price ?? 2000;
+    const shotPrice = pinnedShot?.price ?? 3000;
     const canIsHalf = pinnedCan?.isHalfOff ?? false;
     const shotIsHalf = pinnedShot?.isHalfOff ?? false;
     // 追加用: 元の価格（reducerが半額計算する）
     const canOriginalPrice = pinnedCan?.originalPrice ?? 1500;
-    const shotOriginalPrice = pinnedShot?.originalPrice ?? 2000;
+    const shotOriginalPrice = pinnedShot?.originalPrice ?? 3000;
 
     // 半額ルール判定
     const isInitialOrR = state.customerType === 'initial' || state.customerType === 'r_within' || state.customerType === 'r_after';

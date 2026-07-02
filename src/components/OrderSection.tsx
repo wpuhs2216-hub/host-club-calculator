@@ -227,7 +227,7 @@ export const OrderSection: React.FC<OrderSectionProps> = ({
                             }`}
                         >
                             <span className={`text-sm font-bold ${isHalfOff ? 'text-[var(--gold-color)]' : 'text-[var(--text-color)]'}`}>
-                                ⟡ 半額適用 (¥{(selectedItem.name === 'カン' ? 700 : selectedItem.price / 2).toLocaleString()})
+                                ⟡ 半額適用 (¥{(selectedItem.name === 'カン' ? 700 : selectedItem.name === 'ショット系' ? 1000 : selectedItem.price / 2).toLocaleString()})
                             </span>
                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
                                 isHalfOff ? 'border-[var(--gold-color)] bg-[var(--gold-color)]' : 'border-[var(--border-color)] bg-transparent'

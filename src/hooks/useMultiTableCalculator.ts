@@ -30,6 +30,30 @@ function nextSlipName(slips: SlipInfo[]): string {
     return SLIP_NAMES[slips.length] ?? `⑪+${slips.length - 10}`;
 }
 
+// v2.4.2: 保存済み伝票のショット半額を特殊価格に補正（旧計算の¥1,500が残っている場合があるため）
+function fixSavedShotHalfPrices(state: MultiTableState, config: StoreConfig): MultiTableState {
+    const shotName = config.pinnedOrders[2]?.name ?? 'ショット系';
+    const specialPrice = config.halfOffRules.shotSpecialPrice;
+    if (!specialPrice) return state;
+    return {
+        ...state,
+        tables: state.tables.map(table => ({
+            ...table,
+            slips: table.slips.map(slip => ({
+                ...slip,
+                state: {
+                    ...slip.state,
+                    orders: slip.state.orders.map(o =>
+                        o.baseName === shotName && o.isHalfOff && o.price !== specialPrice
+                            ? { ...o, price: specialPrice }
+                            : o
+                    ),
+                },
+            })),
+        })),
+    };
+}
+
 function createInitialMultiState(config: StoreConfig): MultiTableState {
     return {
         tables: config.tableNames.map((name, i) => ({
@@ -298,7 +322,7 @@ export function useMultiTableCalculator() {
             if (saved) {
                 const parsed = JSON.parse(saved) as MultiTableState;
                 if (parsed.tables && parsed.tables.length === cfg.tableNames.length) {
-                    return parsed;
+                    return fixSavedShotHalfPrices(parsed, cfg);
                 }
             }
         } catch { /* ignore */ }

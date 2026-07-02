@@ -149,7 +149,7 @@ function OrderSection() {
       <Card>
         <h3 className="font-bold text-[var(--gold-color)] mb-2">半額のルール</h3>
         <InfoRow label="カンの半額" value="¥700固定（¥750ではない）" />
-        <InfoRow label="ショット系の半額" value="¥1,500" />
+        <InfoRow label="ショット系の半額" value="¥1,000固定（¥1,500ではない）" />
         <InfoRow label="新規・Rのシャンパン" value="1本だけ半額" />
         <InfoRow label="女子会・セブンラック" value="シャンパン何本でも半額" />
         <Warning>新規・Rでシャンパン2本目以降は「半額適用済み（1本制限）」と表示され、半額にできません。</Warning>
