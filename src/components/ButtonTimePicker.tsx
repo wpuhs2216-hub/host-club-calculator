@@ -54,18 +54,16 @@ export const ButtonTimePicker: React.FC<ButtonTimePickerProps> = ({
     setStep(3);
   }, []);
 
+  // 確定はユーザーが分の一の位を選択したときのみ行う。
+  // （初期値パースで3値が揃った瞬間に onChange が発火すると、
+  //   既存伝票の時間編集が開いた直後に閉じてしまうため）
   const handleMinuteOnesSelect = useCallback((o: number) => {
     setMinuteOnes(o);
-  }, []);
-
-  // Fire onChange when all three parts are set
-  useEffect(() => {
-    if (hour !== null && minuteTens !== null && minuteOnes !== null) {
+    if (hour !== null && minuteTens !== null) {
       const hStr = String(hour).padStart(2, '0');
-      const mStr = `${minuteTens}${minuteOnes}`;
-      onChange(`${hStr}:${mStr}`);
+      onChange(`${hStr}:${minuteTens}${o}`);
     }
-  }, [hour, minuteTens, minuteOnes, onChange]);
+  }, [hour, minuteTens, onChange]);
 
   const handleBack = () => {
     if (step === 2) {

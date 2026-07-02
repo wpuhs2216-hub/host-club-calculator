@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.4.0';
+export const APP_VERSION = '2.4.1';
 
 export type VersionEntry = {
   version: string;
@@ -6,6 +6,12 @@ export type VersionEntry = {
 };
 
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '2.4.1',
+    notes: [
+      '不具合修正: 既存伝票の入店時間・会計時刻を修正できない問題を解消',
+    ],
+  },
   {
     version: '2.4.0',
     notes: [
